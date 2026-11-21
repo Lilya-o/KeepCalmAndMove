@@ -1,0 +1,23 @@
+﻿id,name,name_de,name_fr,name_it
+11,EK_IT_STOERUNG,IT-Störung,Dérangement IT,Perturbazione IT
+58,EG_001,Barrierenstörung,Dérangement à un passage à niveau,Guasto alle barriere
+59,EG_004,Bauarbeiten,Travaux,Lavori di costruzione
+60,EG_006,Gleisschaden,Dégât à la voie,Danni ai binari
+61,EG_008,Fahrleitungsstörung,Dérangement à la ligne de contact,Guasto alla linea di contatto
+62,EG_010,Technische Störung an der Bahnanlage,Dérangement aux installations ferroviaires,Guasto tecnico all'impianto ferroviario
+63,EG_011,Stromausfall,Panne d'alimentation électrique,Interruzione di corrente elettrica
+65,EG_014,Zug blockiert Strecke,Un train bloque la ligne,Un treno blocca la tratta
+80,EG_046,Personen in Gleisnähe,Personnes aux abords des voies,Persone nelle vicinanze dei binari
+81,EG_047,Personenunfall,Accident de personne,Incidente a persona
+83,EG_050,Tiere in Gleisnähe,Animaux aux abords des voies,Animali nei pressi dei binari
+86,EG_063,Betriebsstörung,Perturbation d'exploitation,Perturbazione dell'esercizio
+87,EG_100,Hindernis auf den Gleisen,Obstacle sur les voies,Ostacolo sui binari
+91,EG_110,Brand,Incendie,Incendio
+104,EG_128,Streik Italien,Grève Italie,Sciopero Italia
+111,EG_156,Unbekannt,Inconnu,Sconosciuta
+113,EG_158,Ausserordentliche Bauarbeiten,Travaux exceptionnels,Lavori di costruzione straordinari
+116,EG_166,Ereignis Deutschland,Événement Allemagne,Evento Germania
+118,EG_168,Ereignis Italien,Événement Italie,Evento Italia
+135,EG_192,Feuerwehreinsatz,Intervention des pompiers,Intervento dei pompieri
+139,EG_196,Technische Störung Infrastruktur,Dérangement technique à l'infrastructure,Guasto tecnico all'infrastruttura
+257,EK_VERMISSTMELDUNG,Vermisstmeldung,Avis de disparition,Persona scomparsa
