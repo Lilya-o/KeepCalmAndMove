@@ -26,6 +26,9 @@ class ReplayDisruptionSource(
     private val xlsxZone: String = "Europe/Zurich",
 ) : DisruptionSource {
 
+    /** Ids d'incidents configurés pour la démo (ordre de config). Sert à distinguer un id inconnu. */
+    val configuredIds: List<String> get() = incidentIds
+
     private val reasonById: Map<String, ReasonRow> = raw.reasons.associateBy { it.id }
 
     // Versions d'incident par id, triées chronologiquement (croissant).

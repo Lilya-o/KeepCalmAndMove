@@ -15,6 +15,8 @@ dependencies {
     implementation(libs.kotlin.csv)
     implementation(libs.ktor.serverCore)
     implementation(libs.ktor.serverNetty)
+    implementation(libs.ktor.serverContentNegotiation)
+    implementation(libs.ktor.serializationJson)
     testImplementation(libs.ktor.serverTestHost)
     testImplementation(libs.kotlin.testJunit)
 }
