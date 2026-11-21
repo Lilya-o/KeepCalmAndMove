@@ -1,0 +1,137 @@
+@startuml liveticker_erd
+hide circle
+skinparam linetype ortho
+
+entity "reason" as reason {
+  * id : varchar <<PK>>
+  --
+  * reason_de : varchar
+  * reason_fr : varchar
+  * reason_it : varchar
+  * reason_en : varchar
+}
+
+entity "incident" as incident {
+  * id : varchar <<PK>>
+  --
+  * duration_type : varchar
+  duration_from : timestamptz
+  duration_to : timestamptz
+  duration_at_least : time
+  * reason_id_fk : varchar <<FK>>
+  author_id_fk : bigint
+  * created_date : timestamptz
+  * last_modified_date : timestamptz
+  * created_at_source : timestamptz
+  * updated_at_source : timestamptz
+  version : bigint
+  lifecycle : varchar
+  origin_language : varchar
+  * summary_de : varchar
+  * summary_fr : varchar
+  * summary_it : varchar
+  * summary_en : varchar
+  description_de : varchar
+  description_fr : varchar
+  description_it : varchar
+  description_en : varchar
+}
+
+entity "incident_audit" as incident_audit {
+  id : varchar <<UQ1>>
+  last_modified_date : timestamptz <<UQ1>>
+  --
+  duration_type : varchar
+  duration_from : timestamptz
+  duration_to : timestamptz
+  duration_at_least : time
+  reason_id_fk : varchar
+  author_id_fk : bigint
+  created_date : timestamptz
+  created_at_source : timestamptz
+  updated_at_source : timestamptz
+  version : bigint
+  lifecycle : varchar
+  origin_language : varchar
+  summary_de : varchar
+  summary_fr : varchar
+  summary_it : varchar
+  summary_en : varchar
+  description_de : varchar
+  description_fr : varchar
+  description_it : varchar
+  description_en : varchar
+}
+
+entity "message" as message {
+  * id : uuid <<PK>>
+  --
+  * incident_id_fk : varchar <<FK>>
+  * author_id_fk : bigint
+  * created_date : timestamptz
+  * last_modified_date : timestamptz
+  * status : varchar
+  * title_de : varchar
+  * title_fr : varchar
+  * title_it : varchar
+  * title_en : varchar
+  * message_de : varchar
+  * message_fr : varchar
+  * message_it : varchar
+  * message_en : varchar
+  * de_translated : boolean
+  * fr_translated : boolean
+  * it_translated : boolean
+  * en_translated : boolean
+}
+
+entity "message_audit" as message_audit {
+  id : uuid <<UQ1>>
+  last_modified_date : timestamptz <<UQ1>>
+  --
+  incident_id_fk : varchar
+  author_id_fk : bigint
+  created_date : timestamptz
+  status : varchar
+  title_de : varchar
+  title_fr : varchar
+  title_it : varchar
+  title_en : varchar
+  message_de : varchar
+  message_fr : varchar
+  message_it : varchar
+  message_en : varchar
+  de_translated : boolean
+  fr_translated : boolean
+  it_translated : boolean
+  en_translated : boolean
+}
+
+reason   ||--o{ incident : "reason_id_fk (FK)"
+incident ||--o{ message  : "incident_id_fk (FK)"
+
+incident ||..o{ incident_audit : "id (trigger copy of OLD row)"
+message  ||..o{ message_audit  : "id (trigger copy of OLD row)"
+reason   ||..o{ incident_audit : "reason_id_fk (no FK)"
+incident ||..o{ message_audit  : "incident_id_fk (no FK)"
+
+note bottom of incident_audit
+  Filled by trigger tud_incident_audit (BEFORE UPDATE/DELETE).
+  Created via SELECT INTO: no PK, FKs or NOT NULL.
+  Unique key: (id, last_modified_date).
+end note
+
+note bottom of message_audit
+  Filled by trigger tud_message_audit (BEFORE UPDATE/DELETE).
+  Unique key: (id, last_modified_date).
+end note
+
+note as N1
+  Omitted (not in the CSV exports):
+  reason: created_date
+  incident/_audit: status, source, has_been_opened
+  message/_audit: media_id_fk, verifier_id_fk, creator,
+    last_modifier, verified_date
+  author_id_fk -> employee(id), table not shown
+end note
+@enduml

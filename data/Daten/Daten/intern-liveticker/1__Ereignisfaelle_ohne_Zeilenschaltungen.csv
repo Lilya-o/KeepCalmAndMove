@@ -1,0 +1,138 @@
+﻿id,created_at,datum,active,archived,zug_nr_strecke,beschreibung,ereigniskategorie_id
+24416,2026-09-01 04:09:10.625,2026-09-01 04:19:32.746,False,True,Ostermundigen,,81
+24417,2026-09-01 04:18:05.161,2026-09-01 04:23:21.688,False,True,Altdorf UR - Bellinzona,,65
+24419,2026-09-01 10:12:47.691,2026-09-01 10:11:50.562,False,True,Le Landeron,,60
+24420,2026-09-01 14:58:36.065,2026-09-01 14:57:46.931,False,True,Effrektion - Winterthur,,65
+24422,2026-09-01 18:15:15.559,2026-09-01 18:14:52.098,False,True,Brig - Visp,,60
+24424,2026-09-02 05:40:23.434,2026-09-02 05:38:12.482,False,True,Küssnacht am Rigi - ,,113
+24425,2026-09-02 07:21:28.679,2026-09-02 07:20:49.584,False,True,Arth-Goldau - Walchwil,,60
+24426,2026-09-02 07:58:02.149,2026-09-02 08:09:55.409,False,True,Bern - Olten,Weichenstörung ,62
+24429,2026-09-02 18:03:15.773,2026-09-02 18:02:27.871,False,True,Eschlikon TG - Aadorf,,65
+24430,2026-09-02 18:54:39.133,2026-09-02 18:53:49.423,False,True,Bern - Bern Wankdorf,,111
+24433,2026-09-03 07:45:44.348,2026-09-03 08:39:34.421,False,True,Tecknau - Gelterkinden,,65
+24434,2026-09-03 08:32:38.590,2026-09-03 08:36:53.133,False,True,Como S. Giovanni - Seregno,,118
+24439,2026-09-04 09:56:33.678,2026-09-04 09:58:00.609,False,True,Zürich Oerlikon - Wallisellen,,135
+24442,2026-09-04 14:41:39.256,2026-09-04 14:42:12.888,False,True,Lausanne - Vevey,,86
+24443,2026-09-04 15:09:03.672,2026-09-04 15:08:53.135,False,True,Bern - Olten,,65
+24445,2026-09-04 17:07:27.615,2026-09-04 17:07:59.311,False,True,Uznach - Ziegelbrücke,,87
+24446,2026-09-04 17:12:33.412,2026-09-04 17:16:29.678,False,True,Wettingen,,62
+24447,2026-09-04 17:14:45.454,2026-09-04 17:17:27.905,False,True,Eschenbach LU - Hochdorf,,87
+24448,2026-09-04 18:05:08.903,2026-09-04 18:04:49.764,False,True,Fribourg/Freiburg - Avry-Matran,,65
+24450,2026-09-05 07:09:16.147,2026-09-05 07:10:23.181,False,True,Annemasse - Evian-les-Bains,,86
+24454,2026-09-05 22:57:12.653,2026-09-05 22:58:57.316,False,True,Bern Europaplatz - Bern Bümpliz Süd,,81
+24456,2026-09-06 03:28:19.432,2026-09-06 03:58:55.853,False,True,Palézieux - Puidoux,,60
+24457,2026-09-06 04:02:50.324,2026-09-06 04:08:41.862,False,True,Eclépens - Ependes VD,,113
+24460,2026-09-06 19:13:55.042,2026-09-06 19:12:23.946,False,True,Sempach-Neuenkirch,,62
+24461,2026-09-06 19:52:56.061,2026-09-07 06:05:02.191,False,True,CHI-STAF-LIFS,Sciopero nazionale dalle ore 21:18 di lunedì 07 settembre alle ore 21:17 di martedì 08 settembre,104
+24463,2026-09-06 21:23:12.060,2026-09-06 21:23:49.163,False,True,Bassersdorf - Effretikon,,81
+24466,2026-09-07 06:56:08.934,2026-09-07 06:55:16.868,False,True,Konstanz DB,,65
+24467,2026-09-07 07:01:34.718,2026-09-07 07:27:44.346,False,True,Murten/Morat - Kerzers,,62
+24468,2026-09-07 09:14:20.842,2026-09-07 09:14:20.842,False,True,Murten/Morat - Kerzers,,62
+24472,2026-09-07 14:56:06.457,2026-09-07 14:56:11.982,False,True,Rekingen AG - Bad Zurzach,Der Bahnverkehr auf der Strecke Bülach - Koblenz ist zwischen Rekingen AG und Bad Zurzach unterbrochen. Der Grund dafür ist eine technische Störung an der Bahnanlage. Die Einschränkung dauert bis 16:00. Betroffen ist die Linie S36. Es sind Verspätungen und Ausfälle zu erwarten.,62
+24473,2026-09-07 17:48:22.202,2026-09-07 17:47:58.965,False,True,Cornaux NE - Lausanne,,65
+24476,2026-09-08 11:27:48.728,2026-09-08 11:27:22.274,False,True,Olten - Bern,,65
+24477,2026-09-08 12:41:34.049,2026-09-08 12:40:55.158,False,True,Visp - Frutigen,,65
+24478,2026-09-08 12:54:59.969,2026-09-08 12:55:05.596,False,True,Cadenazzo - Luino (I),,62
+24480,2026-09-08 15:32:46.912,2026-09-08 15:38:40.111,False,True,Thalwil - Zug,,60
+24481,2026-09-08 15:54:01.651,2026-09-08 15:54:10.422,False,True,Berlingen - Ermatingen,Barrierenstörung - Barr Beschädigt durch Strassenfahrzeug,58
+24485,2026-09-09 03:40:36.774,2026-09-09 03:40:11.740,False,True,Sargans - Chur,,61
+24486,2026-09-09 06:39:54.347,2026-09-09 06:50:44.609,False,True,Luzern,,62
+24487,2026-09-09 07:20:40.446,2026-09-09 07:32:43.689,False,True,Brig - Visp,,65
+24489,2026-09-09 11:22:43.318,2026-09-09 11:25:54.007,False,True,Zug,,61
+24490,2026-09-09 11:58:35.142,2026-09-09 11:58:17.759,False,True,Goldbach,,65
+24493,2026-09-09 19:32:52.192,2026-09-09 20:00:39.525,False,True,Zürich Hamburg,Ausfall NJ 470 wegen Ereignis in Deutschland,116
+24495,2026-09-10 05:46:41.116,2026-09-10 05:53:49.145,False,True,Wädenswil - Pfäffikon SZ,,61
+24496,2026-09-10 05:55:17.865,2026-09-10 06:00:36.450,False,True,Renan BE - St-Imier,,62
+24497,2026-09-10 08:41:44.053,2026-09-10 08:46:09.848,False,True,Palézieux - Puidoux,,65
+24499,2026-09-10 12:59:25.101,2026-09-10 13:09:50.588,False,True,Melide - Maroggia-Melano,,65
+24501,2026-09-10 16:20:51.908,2026-09-10 16:19:56.947,False,True,Interruption total Grolley - Belfaux CFF,,87
+24502,2026-09-10 18:05:12.274,2026-09-10 18:15:53.253,False,True,Emmenbrücke Gersag,S9 21966 steht in Emmenbrücke Gersag mit einer Fahrzeugstörung,65
+24503,2026-09-10 19:18:43.199,2026-09-10 19:32:58.261,False,True,Bern - Olten,Stellwerkstörung ,62
+24506,2026-09-11 05:40:17.242,2026-09-11 05:45:23.247,False,True,Renens VD - Genève,,113
+24507,2026-09-11 05:55:55.685,2026-09-11 07:33:38.834,False,True,Morges - Lausanne,,61
+24509,2026-09-11 08:39:21.843,2026-09-11 08:41:41.005,False,True,Rubigen - Gümligen,,65
+24510,2026-09-11 08:43:55.829,2026-09-11 08:44:12.119,False,True,Puidoux - Vevey,,60
+24511,2026-09-11 10:16:28.428,2026-09-11 10:16:02.850,False,True,Sierre,,65
+24512,2026-09-11 11:41:48.870,2026-09-11 11:41:59.837,False,True,Oberdorf SO - Solothurn,,87
+24513,2026-09-11 12:26:12.989,2026-09-11 12:39:24.787,False,True,Grellingen - Zwingen,,62
+24514,2026-09-11 14:25:44.387,2026-09-11 14:31:14.549,False,True,Grellingen - Zwingen,,62
+24515,2026-09-11 14:38:34.752,2026-09-11 14:38:13.256,False,True,Luzern,Zug blockiert im Gütsch,65
+24517,2026-09-11 16:22:13.889,2026-09-11 16:22:38.679,False,True,Urdorf - Zürich Altstetten,Gleisschaden ,60
+24518,2026-09-11 19:25:43.516,2026-09-11 19:28:31.786,False,True,Zürich,,257
+24522,2026-09-12 08:38:14.462,2026-09-12 08:55:11.322,False,True,Lausanne - Fribourg/Freiburg,,60
+24523,2026-09-12 09:44:39.252,2026-09-12 09:44:31.400,False,True,Bern - Flamatt,,80
+24526,2026-09-12 15:27:19.950,2026-09-12 18:50:33.248,False,True,Ardon - Sion,,81
+24527,2026-09-12 17:10:07.687,2026-09-12 17:12:52.304,False,True,Neuhausen am Rheinfall,,257
+24529,2026-09-13 05:27:12.112,2026-09-13 05:26:40.189,False,True,Ostermundigen - Gümligen,,87
+24562,2026-09-13 10:48:22.920,2026-09-13 10:51:15.451,False,True,Sesto S. Giovanni - Milano Centrale,,118
+24566,2026-09-13 16:26:03.201,2026-09-13 16:26:15.956,False,True,Läufelfingen - Sissach,,60
+24567,2026-09-13 17:24:50.665,2026-09-13 17:28:43.893,False,True,Oron,,257
+24569,2026-09-13 18:48:35.174,2026-09-13 18:59:18.963,False,True,Interlaken,,257
+24570,2026-09-14 04:23:43.317,2026-09-14 04:56:55.924,False,True,Spiez - Interlaken Ost,,62
+24571,2026-09-14 05:14:12.542,2026-09-14 05:53:11.568,False,True,Morges - St-Prex,Concept terminé à 18h00,113
+24574,2026-09-14 15:12:55.420,2026-09-14 15:16:55.767,False,True,Mogelsberg,Totalunterbruch,81
+24576,2026-09-14 22:40:45.844,2026-09-14 22:42:18.053,False,True,Winterthur,,257
+24577,2026-09-15 05:01:46.760,2026-09-15 05:04:12.713,False,True,Bonstetten-Wettswil - Mettmenstetten,,113
+24578,2026-09-15 05:42:12.949,2026-09-15 05:51:11.974,False,True,St-Prex - Morges,,59
+24580,2026-09-15 09:06:23.910,2026-09-15 09:05:06.103,False,True,Lugano,,65
+24582,2026-09-15 12:13:30.551,2026-09-15 15:27:19.942,False,True,Allaman - Morges,,61
+24584,2026-09-15 14:22:28.942,2026-09-15 14:23:38.497,False,True,Zürich Oerlikon,Stellwerksausfall,62
+24585,2026-09-15 15:15:01.362,2026-09-15 15:15:12.929,False,True,BERN,TESTFALL,11
+24586,2026-09-15 16:13:41.882,2026-09-15 16:19:57.166,False,True,Lengnau,,257
+24587,2026-09-15 17:20:36.214,2026-09-15 17:21:48.750,False,True,Läufelfingen - Sissach,,60
+24590,2026-09-15 22:16:36.217,2026-09-15 22:26:10.872,False,True,Lausanne,,257
+24592,2026-09-16 06:35:46.837,2026-09-16 06:35:26.564,False,True,Spiez - Visp,,65
+24594,2026-09-16 09:59:44.527,2026-09-16 09:59:13.952,False,True,Kreuzlingen - Konstanz ,,65
+24595,2026-09-16 10:28:39.032,2026-09-16 10:33:11.278,False,True,Iselle di Trasquera - Domodossola (I),Totalunterbruch Iselle,62
+24596,2026-09-16 13:30:44.099,2026-09-16 13:33:14.390,False,True,Zürich,,257
+24597,2026-09-16 18:04:34.688,2026-09-16 18:11:34.406,False,True,Bussigny - Vufflens-la-Ville,,60
+24599,2026-09-16 21:25:29.954,2026-09-16 21:26:08.720,False,True,Como Camerlata - Milano Centrale,,118
+24601,2026-09-17 06:43:51.838,2026-09-17 06:43:31.756,False,True,Lenzburg,,62
+24603,2026-09-17 07:49:48.391,2026-09-17 07:49:39.720,False,True,Neyruz FR - Avry-Matran,,83
+24605,2026-09-17 17:32:43.659,2026-09-17 17:33:45.282,False,True,Renens VD - Allaman,,63
+24609,2026-09-18 10:20:14.959,2026-09-18 10:24:40.659,False,True,Opfikon,,257
+24612,2026-09-18 21:08:21.293,2026-09-18 21:08:43.858,False,True,Castione-Arbedo - Biasca,,86
+24614,2026-09-18 23:20:33.404,2026-09-18 23:22:09.133,False,True,Weinfelden - Romanshorn,,81
+24615,2026-09-19 06:20:42.873,2026-09-19 06:31:01.822,False,True,Grolley - Payerne,,62
+24618,2026-09-19 14:20:53.938,2026-09-19 14:21:23.316,False,True,Chénens - Fribourg/Freiburg,,62
+24620,2026-09-19 17:40:37.053,2026-09-19 17:44:52.945,False,True,Giubiasco - Lugano,,62
+24626,2026-09-20 20:06:37.260,2026-09-20 20:04:58.468,False,True,St. Margrethen - Rorschach,,65
+24627,2026-09-20 21:19:24.028,2026-09-20 21:19:18.370,False,True,Sins - Rotkreuz,,81
+24628,2026-09-20 21:31:48.652,2026-09-20 21:45:35.449,False,True,Othmarsingen - Killwangen-Spreitenbach,,60
+24629,2026-09-21 01:33:35.988,2026-09-21 01:33:29.226,False,True,Mägenwil,,113
+24630,2026-09-21 03:48:52.209,2026-09-21 03:46:58.239,False,True,Roche,,81
+24631,2026-09-21 10:15:41.441,2026-09-21 10:15:09.745,False,True,Wanzwil - Solothurn,,139
+24634,2026-09-21 16:17:00.942,2026-09-21 16:17:26.333,False,True,Fribourg,,62
+24635,2026-09-21 17:01:51.212,2026-09-21 17:02:27.545,False,True,Altnau - Münsterlingen-Scherzingen,,87
+24637,2026-09-21 20:23:20.863,2026-09-21 20:25:26.889,False,True,Lengnau BE - Grenchen Süd,,81
+24639,2026-09-22 11:38:35.590,2026-09-22 11:43:56.295,False,True,Bern Brünnen Westside - Kerzers,,81
+24642,2026-09-22 14:16:31.018,2026-09-22 14:18:04.477,False,True,Tüscherz - Biel/Bienne,,91
+24643,2026-09-22 17:05:15.490,2026-09-22 17:05:25.380,False,True,Regensdorf-Watt - Buchs-Dällikon,Brand bei Autoverwerter in Buchs-Dällikon - Totalunterbruch Buchs-Dällikon - Regensdorf-Watt,91
+24646,2026-09-23 04:40:51.380,2026-09-23 04:40:20.979,False,True,Morges - St-Prex,,59
+24647,2026-09-23 05:13:29.373,2026-09-23 05:14:03.538,False,True,Morges - St-Prex,Retablissement tardif après travaux,113
+24648,2026-09-23 09:43:31.128,2026-09-23 09:48:36.388,False,True,Flamatt - Schmitten FR,Weichenstörung ,62
+24651,2026-09-23 14:23:31.681,2026-09-23 14:43:57.205,False,True,Bellinzona - Lugano,,62
+24655,2026-09-24 11:41:19.583,2026-09-24 11:41:34.445,False,True,Mendrisio - Balerna,,60
+24656,2026-09-24 13:48:47.477,2026-09-24 13:48:12.939,False,True,Romont - Vauderens,,65
+24657,2026-09-24 14:46:59.674,2026-09-24 14:46:42.794,False,True,Montreux,,65
+24661,2026-09-25 02:40:41.126,2026-09-25 02:40:23.787,False,True,Wallisellen,,257
+24662,2026-09-25 08:52:54.468,2026-09-25 08:51:48.291,False,True,Lausanne - Puidoux,,139
+24665,2026-09-25 15:54:02.476,2026-09-25 15:54:26.221,False,True,Zürich Stadelhofen - Stettbach,,81
+24666,2026-09-25 16:13:47.438,2026-09-25 16:16:22.014,False,True,Puidoux - Vauderens,,91
+24669,2026-09-26 06:20:13.985,2026-09-26 06:19:36.494,False,True,sga,,113
+24670,2026-09-26 07:05:37.424,2026-09-26 07:12:51.304,False,True,Kemptthal,,60
+24671,2026-09-26 07:55:44.989,2026-09-26 07:55:31.644,False,True,Oberrieden Dorf,,65
+24672,2026-09-26 09:37:42.354,2026-09-26 09:39:41.356,False,True,Bercher VD,,257
+24674,2026-09-26 12:42:04.501,2026-09-26 12:44:04.595,False,True,Luzern - Hochdorf,,62
+24677,2026-09-26 14:17:09.914,2026-09-26 14:22:51.712,False,True,Gossau SG,,61
+24678,2026-09-26 19:44:50.789,2026-09-26 19:50:27.733,False,True,St. Margrethen SG - Bregenz,,81
+24680,2026-09-27 09:04:58.204,2026-09-27 09:09:39.200,False,True,Bern - Olten,,83
+24683,2026-09-27 16:16:38.085,2026-09-27 16:16:26.649,False,True,Liestal,,81
+24684,2026-09-27 18:44:11.270,2026-09-27 18:43:52.357,False,True,Muttenz - Liestal,,87
+24689,2026-09-28 15:19:41.365,2026-09-28 15:28:27.272,False,True,Wettingen - Brugg AG,,62
+24692,2026-09-29 09:03:51.022,2026-09-29 09:11:43.489,False,True,Brienz,,257
+24693,2026-09-29 11:37:15.105,2026-09-29 11:57:09.455,False,True,La Chaux-de-Fonds Les Forges - Le Crêt-du-Locle,,60
+24695,2026-09-29 15:42:17.737,2026-09-29 15:47:47.015,False,True,Castione,,257
+24697,2026-09-29 17:43:31.841,2026-09-29 17:48:50.326,False,True,Lenzburg,,257
+24699,2026-09-29 19:25:56.957,2026-09-29 19:31:05.373,False,True,Olten - Solothurn,,62
+24701,2026-09-30 06:15:37.856,2026-09-30 06:15:42.958,False,True,Urdorf - Zürich Altstetten,Vermuteter Gleischaden ,60
