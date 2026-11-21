@@ -1,0 +1,2 @@
+id,created_date,last_modified_date,incident_id_fk,author_id_fk,status,title_de,title_fr,title_it,title_en,message_de,message_fr,message_it,message_en,de_translated,fr_translated,it_translated,en_translated
+M2,2026-01-01 12:20:00.000 +0100,2026-01-01 12:30:00.000 +0100,FAKE_1,,PUBLISHED,,,,Later update,,,,Situation is improving,true,true,true,false

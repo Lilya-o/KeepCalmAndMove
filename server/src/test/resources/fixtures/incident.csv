@@ -1,0 +1,3 @@
+id,duration_type,duration_from,duration_to,duration_at_least,reason_id_fk,created_date,last_modified_date,created_at_source,updated_at_source,author_id_fk,version,lifecycle,origin_language,summary_de,summary_fr,summary_it,summary_en,description_de,description_fr,description_it,description_en
+FAKE_1,UNTIL_APPROX_DATE_TIME,,,,EG_TEST,2026-01-01 07:50:00.000 +0100,2026-01-01 13:00:00.000 +0100,2026-01-01 07:45:00.000 +0100,2026-01-01 12:55:00.000 +0100,,40,ENDED,EN,,,,Service resumed A to B,,,,Service has resumed
+FAKE_2,UNTIL_DATE,,2026-02-01 18:00:00.000 +0100,,EG_TEST2,2026-02-01 15:00:00.000 +0100,2026-02-01 15:10:00.000 +0100,2026-02-01 14:55:00.000 +0100,2026-02-01 15:05:00.000 +0100,,5,INFO,EN,,,,Second test disruption,,,,Second disruption text

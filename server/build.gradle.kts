@@ -12,6 +12,7 @@ application {
 dependencies {
     api(project(":core"))
     implementation(libs.logback)
+    implementation(libs.kotlin.csv)
     implementation(libs.ktor.serverCore)
     implementation(libs.ktor.serverNetty)
     testImplementation(libs.ktor.serverTestHost)

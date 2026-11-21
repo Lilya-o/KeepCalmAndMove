@@ -1,17 +1,24 @@
 package lauzhack.sbb.winners.model
 
+import kotlinx.serialization.Serializable
+
+@Serializable
 enum class Severity { INFO, MINOR, MAJOR, CRITICAL }
 
+@Serializable
 enum class MessageSource { PUBLIC_TICKER, INTERNAL_TICKER, TIMETABLE }
 
+@Serializable
 enum class OptionType { ALTERNATIVE_ROUTE, WAIT, TAXI, HOTEL, REFUND }
 
+@Serializable
 data class DisruptionMessage(
     val timestampMillis: Long,
     val source: MessageSource,
     val text: String,
 )
 
+@Serializable
 data class Disruption(
     val id: String,
     val cause: String,
@@ -25,6 +32,7 @@ data class Disruption(
     val messages: List<DisruptionMessage>,
 )
 
+@Serializable
 data class Journey(
     val origin: String,
     val destination: String,
@@ -33,12 +41,14 @@ data class Journey(
 )
 
 /** Toutes les valeurs entre 0.0 et 1.0 */
+@Serializable
 data class Profile(
     val urgency: Double,
     val budgetSensitivity: Double,
     val flexibility: Double,
 )
 
+@Serializable
 data class Option(
     val type: OptionType,
     val title: String,
