@@ -1,0 +1,145 @@
+package lauzhack.sbb.winners.engine.ia
+
+import lauzhack.sbb.winners.engine.RuleBasedOptionEngine
+import lauzhack.sbb.winners.engine.RuleBasedOptionEngine.Companion.HEURE_ETE_SUISSE_MILLIS
+import lauzhack.sbb.winners.engine.RuleBasedOptionEngine.Companion.HEURE_MILLIS
+import lauzhack.sbb.winners.engine.RuleBasedOptionEngine.Companion.JOUR_MILLIS
+import lauzhack.sbb.winners.engine.RuleBasedOptionEngine.Companion.MINUTE_MILLIS
+import lauzhack.sbb.winners.model.Disruption
+import lauzhack.sbb.winners.model.Journey
+import lauzhack.sbb.winners.model.Option
+import lauzhack.sbb.winners.model.OptionType
+import lauzhack.sbb.winners.model.Profile
+
+/** Tout ce que l'écran doit afficher. */
+data class Recommandation(
+    /** Le conseil principal (bandeau en haut de l'écran). */
+    val conseil: String,
+    /** Les options, de la meilleure à la moins bonne, avec des explications dans la langue choisie. */
+    val options: List<Option>,
+    val analyse: RuleBasedOptionEngine.Analyse,
+    val faits: FaitsExtraits,
+    /** Vrai si l'IA a complété les faits ou reformulé au moins un texte (sinon : règles seules). */
+    val iaUtilisee: Boolean,
+) {
+    /** L'option recommandée (la n°1). */
+    val recommandee: Option? get() = options.firstOrNull()
+
+    /** Titre court pour l'écran (« Plus de train ce soir », « Reprise prévue vers 18:30 »…). */
+    val titre: String get() = analyse.titre
+
+    /** Chance qu'un train circule encore ce soir, en % (estimation du moteur). */
+    val chanceTrainCeSoirPourcent: Int get() = (analyse.chanceRepriseCeSoir * 100).toInt()
+
+    /** Les autres choix, sous la recommandation (l'indemnité est à part : ce n'est pas un moyen de rentrer). */
+    val alternatives: List<Option>
+        get() = options.drop(1).filter { it.type != OptionType.REFUND }
+
+    /** L'indemnité de retard, si elle s'applique : à afficher comme une information. */
+    val indemnite: Option?
+        get() = options.firstOrNull { it.type == OptionType.REFUND }
+
+    /** Retard si l'on attend, en minutes (« Si vous attendez : +85 min »), ou null si on ne sait pas. */
+    fun retardSiAttenteMinutes(journey: Journey): Long? =
+        options.firstOrNull { it.type == OptionType.WAIT }?.etaMillis
+            ?.let { (it - journey.plannedArrivalMillis) / MINUTE_MILLIS }
+}
+
+/**
+ * Point d'entrée unique pour l'interface (C), le serveur (A) et l'assistant.
+ *
+ *   val conseiller = ConseillerVoyage(modele = KoogModeleIA(...))   // ou modele = null : sans IA
+ *   val reco = conseiller.conseiller(disruption, journey, profile, Langue.FR)
+ *
+ * Les étapes :
+ *  1. Faits : règles d'abord, IA seulement si nécessaire (cache, garde-fous).
+ *  2. Si un message annonce une heure ou une durée de reprise que les données n'avaient pas, on l'utilise
+ *     (avec une confiance réduite).
+ *  3. Le moteur de règles décide : options, droits, prix, classement. L'IA n'intervient PAS ici.
+ *  4. Les textes sont reformulés dans la langue choisie, en un seul appel, sous garde-fous.
+ *
+ * Sans IA (modele = null, pas de réseau, délai dépassé), tout fonctionne quand même en français.
+ */
+class ConseillerVoyage(
+    private val moteur: RuleBasedOptionEngine = RuleBasedOptionEngine(),
+    modele: ModeleIA? = null,
+    private val decalageHoraireMillis: Long = HEURE_ETE_SUISSE_MILLIS,
+) {
+    val stats = StatistiquesIA()
+    private val extracteur = ExtracteurHybride(modele, stats)
+    private val redacteur = RedacteurExplications(modele, stats)
+
+    /**
+     * @param profile facultatif : l'interface n'a pas de choix de profil, on utilise alors [PROFIL_PAR_DEFAUT].
+     */
+    suspend fun conseiller(
+        disruption: Disruption,
+        journey: Journey,
+        profile: Profile = PROFIL_PAR_DEFAUT,
+        langue: Langue = Langue.FR,
+    ): Recommandation {
+        // 1. Comprendre les messages
+        val faits = extracteur.extraire(disruption)
+
+        // 2. Compléter l'heure de reprise si un message la donne
+        val perturbation = completerFin(disruption, faits)
+
+        // 3. Décider (règles uniquement)
+        val analyse = moteur.analyser(perturbation, journey, faits)
+        val options = moteur.rank(moteur.generateOptions(perturbation, journey, faits), profile)
+
+        // 4. Rédiger : conseil + explications en un seul appel
+        val (textes, reformule) = redacteur.reformuler(
+            listOf(analyse.conseil) + options.map { it.explanation },
+            langue,
+        )
+        val optionsRedigees = options.mapIndexed { i, o -> o.copy(explanation = textes[i + 1]) }
+
+        return Recommandation(
+            conseil = textes[0],
+            options = optionsRedigees,
+            analyse = analyse,
+            faits = faits,
+            iaUtilisee = reformule || faits.source == SourceDesFaits.REGLES_ET_IA,
+        )
+    }
+
+    /** Si la fin n'est pas connue mais qu'un message donne une heure ou une durée, on la reprend. */
+    internal fun completerFin(d: Disruption, faits: FaitsExtraits): Disruption {
+        if (d.estimatedEndMillis != null) return d
+        val derniereInfo = d.messages.maxOfOrNull { it.timestampMillis } ?: d.lastUpdateMillis
+
+        val fin = faits.repriseHeure?.let { prochaineOccurrence(it, derniereInfo) }
+            ?: faits.dureeMinutes?.let { minutes ->
+                // la durée compte à partir du message qui l'annonce
+                val annonce = d.messages.lastOrNull { Regex("(?<!\\d)$minutes(?!\\d)").containsMatchIn(it.text) }
+                (annonce?.timestampMillis ?: derniereInfo) + minutes * MINUTE_MILLIS
+            }
+            ?: return d
+
+        return d.copy(
+            estimatedEndMillis = fin,
+            confidence = minOf(d.confidence, CONFIANCE_FIN_LUE_DANS_UN_MESSAGE),
+        )
+    }
+
+    /** « 18:45 » → le prochain 18:45 (heure suisse) après [reference] moins 1 h (une heure juste passée reste ce jour). */
+    private fun prochaineOccurrence(hhmm: String, reference: Long): Long {
+        val (h, m) = hhmm.split(':').map { it.toLong() }
+        val debutJour = (reference + decalageHoraireMillis).floorDiv(JOUR_MILLIS) * JOUR_MILLIS - decalageHoraireMillis
+        val candidat = debutJour + h * HEURE_MILLIS + m * MINUTE_MILLIS
+        return if (candidat < reference - HEURE_MILLIS) candidat + JOUR_MILLIS else candidat
+    }
+
+    companion object {
+        /**
+         * Profil utilisé quand l'interface ne demande rien au voyageur : temps, argent et effort comptent autant.
+         * Sur l'incident réel de Renens (17.09.2026), il conseille d'attendre tant que l'heure de reprise tient,
+         * puis le bus de remplacement dès que l'heure a été repoussée deux fois.
+         */
+        val PROFIL_PAR_DEFAUT = Profile(urgency = 0.5, budgetSensitivity = 0.5, flexibility = 0.5)
+
+        /** Une heure lue dans un message reste une annonce, pas une certitude. */
+        const val CONFIANCE_FIN_LUE_DANS_UN_MESSAGE = 0.6
+    }
+}

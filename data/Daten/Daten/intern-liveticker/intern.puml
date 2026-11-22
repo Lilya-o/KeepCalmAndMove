@@ -1,0 +1,53 @@
+@startuml
+title KULT Liveticker - Datenmodell
+
+hide methods
+skinparam classAttributeIconSize 0
+
+class Ereignisfall {
+  +id : Long
+  +created_at : Timestamp
+  +datum : Timestamp
+  +active : Boolean
+  +archived : Boolean
+  +zug_nr_strecke : String
+  +beschreibung : Text
+  +ereigniskategorie_id : Integer
+}
+
+class Ereigniskategorie {
+  +id : Integer
+  +name : String
+  +name_de : String
+  +name_fr : String
+  +name_it : String
+}
+
+class LivetickerMessage {
+  +id : Long
+  +ereignisfall_id : Long
+  +timestamp : Timestamp
+  +sender : String
+  +message : Text
+  +name : String
+  +vorname : String
+  +telefonnummer : String
+}
+
+
+
+Ereigniskategorie "1" <-- "0..*" Ereignisfall : kategorisiert
+
+Ereignisfall "1" --> "0..*" LivetickerMessage : enthält
+
+
+
+note bottom of Ereignisfall
+Beispiel:
+Bern - Olten
+Ostermundigen
+Brig - Visp
+...
+end note
+
+@enduml
