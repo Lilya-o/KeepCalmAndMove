@@ -32,6 +32,8 @@ kotlin {
         androidMain.dependencies {
             implementation(libs.compose.uiToolingPreview)
             implementation(libs.compose.uiTooling)
+            // Moteur HTTP spécifique à Android (code "spécifique" du pitch).
+            implementation(libs.ktor.clientOkhttp)
         }
         commonMain.dependencies {
             api(project(":core"))
@@ -43,6 +45,15 @@ kotlin {
             implementation(libs.compose.uiToolingPreview)
             implementation(libs.androidx.lifecycle.viewmodelCompose)
             implementation(libs.androidx.lifecycle.runtimeCompose)
+            // Client HTTP partagé pour appeler le serveur de replay (rôle A).
+            implementation(libs.kotlinx.coroutinesCore)
+            implementation(libs.ktor.clientCore)
+            implementation(libs.ktor.clientContentNegotiation)
+            implementation(libs.ktor.clientJson)
+        }
+        jvmMain.dependencies {
+            // Moteur HTTP spécifique au Desktop/JVM (code "spécifique" du pitch).
+            implementation(libs.ktor.clientCio)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)

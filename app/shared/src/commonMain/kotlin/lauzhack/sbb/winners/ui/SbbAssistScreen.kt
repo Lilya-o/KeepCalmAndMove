@@ -37,12 +37,16 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
@@ -148,6 +152,13 @@ private val demoConnections = listOf(
 private fun clockTime(minute: Long): String =
     (minute / 60).toString().padStart(2, '0') + ":" + (minute % 60).toString().padStart(2, '0')
 
+/** Heure murale suisse (UTC+2, heure d'été : correct pour les données de septembre 2026). */
+private const val SUISSE_ETE_MILLIS = 2 * 60 * 60 * 1000L
+private fun clockFromMillis(millis: Long): String {
+    val minuteDuJour = (((millis + SUISSE_ETE_MILLIS) / 60_000L) % 1440L + 1440L) % 1440L
+    return clockTime(minuteDuJour)
+}
+
 @Composable
 internal fun SbbAssistScreen() {
     var screen by rememberSaveable { mutableStateOf(Screen.JOURNEY) }
@@ -159,6 +170,12 @@ internal fun SbbAssistScreen() {
     var showInformation by rememberSaveable { mutableStateOf(false) }
     val dark = darkOverride ?: isSystemInDarkTheme()
     val languageCode = (language ?: Locale.current.language).takeIf { it in listOf("fr", "de") } ?: "en"
+
+    // Pont serveur (A) -> moteur (B) : charge la timeline une fois, le curseur de replay la rejoue.
+    val scope = rememberCoroutineScope()
+    val viewModel = remember { AssistViewModel(scope) }
+    val ui by viewModel.state.collectAsState()
+    LaunchedEffect(Unit) { viewModel.charger() }
 
     CompositionLocalProvider(LocalLanguage provides languageCode) {
         val colors = if (dark) DarkRailColors else LightRailColors
@@ -227,6 +244,8 @@ internal fun SbbAssistScreen() {
                 }
                 if (showInformation) {
                     DelayDialog(
+                        ui = ui,
+                        onCursor = viewModel::surCurseur,
                         onClose = { showInformation = false },
                         onOptions = {
                             showInformation = false
@@ -627,7 +646,7 @@ private fun TimelineCaption() {
 }
 
 @Composable
-private fun DelayDialog(onClose: () -> Unit, onOptions: () -> Unit) {
+private fun DelayDialog(ui: AssistUiState, onCursor: (Long) -> Unit, onClose: () -> Unit, onOptions: () -> Unit) {
     Dialog(onDismissRequest = onClose, properties = DialogProperties(usePlatformDefaultWidth = false)) {
         Surface(
             Modifier.widthIn(max = 400.dp).fillMaxWidth(.96f).fillMaxHeight(.92f),
@@ -651,7 +670,7 @@ private fun DelayDialog(onClose: () -> Unit, onOptions: () -> Unit) {
                     Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(12.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    DelayInformation(onOptions)
+                    DelayInformation(ui, onCursor, onOptions)
                 }
             }
         }
@@ -749,93 +768,121 @@ private fun ThemeIcon(showSun: Boolean) {
 }
 
 @Composable
-private fun DelayInformation(onOptions: () -> Unit) {
-    val disruption = SampleData.disruption
-    val journey = SampleData.journey
-    val waitOption = SampleData.options.firstOrNull { it.type == OptionType.WAIT }
-    val waitArrival = waitOption?.etaMillis
+private fun DelayInformation(ui: AssistUiState, onCursor: (Long) -> Unit, onOptions: () -> Unit) {
     val colors = MaterialTheme.colorScheme
-    Panel {
-        Text(
-            textResource(Res.string.route, journey.origin, journey.destination),
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold,
-        )
-        ConnectionHeading(demoConnections.first { it.delayed })
-        HorizontalDivider()
-        if (waitArrival != null && waitArrival > journey.plannedArrivalMillis) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(
-                    textResource(Res.string.delay_if_waiting),
-                    Modifier.weight(1f),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = colors.onSurfaceVariant,
-                )
-                Text(
-                    "+${elapsedMinutes(waitArrival) - elapsedMinutes(journey.plannedArrivalMillis)} min",
-                    style = MaterialTheme.typography.titleLarge,
-                    color = colors.primary,
-                    fontWeight = FontWeight.Bold,
-                )
-            }
+
+    // Curseur de replay : rejoue l'incident minute par minute (moment fort de la démo).
+    ReplaySlider(ui, onCursor)
+
+    val reco = ui.reco
+    val disruption = ui.disruptionCourante
+    when {
+        reco == null || disruption == null -> Panel {
+            Text(
+                ui.erreur ?: textResource(Res.string.status_may_change),
+                style = MaterialTheme.typography.bodyMedium,
+                color = if (ui.erreur != null) colors.primary else colors.onSurfaceVariant,
+            )
         }
-        Text(
-            textResource(Res.string.updated_at_clock, clockTime(DEMO_START_MINUTE + elapsedMinutes(disruption.lastUpdateMillis))),
-            style = MaterialTheme.typography.bodySmall,
-            color = colors.onSurfaceVariant,
-        )
-        Text(textResource(Res.string.demo_cause), style = MaterialTheme.typography.bodyMedium)
-    }
-    Panel {
-        Text(textResource(Res.string.information), style = MaterialTheme.typography.labelLarge)
-        HorizontalDivider()
-        Text(textResource(Res.string.status_may_change), style = MaterialTheme.typography.bodySmall, color = colors.onSurfaceVariant)
-        SampleData.options.firstOrNull()?.let { option ->
-            Text(textResource(Res.string.recommended), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-            Text(optionTitle(option))
-            Text(optionReason(option), style = MaterialTheme.typography.bodySmall, color = colors.onSurfaceVariant)
-            option.etaMillis?.let { arrival ->
+        else -> {
+            // Bandeau : titre + conseil du moteur (textes en français fournis par B).
+            Panel {
+                Text(reco.titre, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                Text(reco.conseil, style = MaterialTheme.typography.bodyMedium)
+                HorizontalDivider()
+                ui.journey?.let { journey ->
+                    reco.retardSiAttenteMinutes(journey)?.let { retard ->
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Text(
+                                textResource(Res.string.delay_if_waiting),
+                                Modifier.weight(1f),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = colors.onSurfaceVariant,
+                            )
+                            Text(
+                                "+$retard min",
+                                style = MaterialTheme.typography.titleLarge,
+                                color = colors.primary,
+                                fontWeight = FontWeight.Bold,
+                            )
+                        }
+                    }
+                }
                 Text(
-                    textResource(Res.string.estimated_arrival_clock, clockTime(DEMO_START_MINUTE + elapsedMinutes(arrival))),
+                    "Chance qu'un train passe ce soir : ${reco.chanceTrainCeSoirPourcent} %",
                     style = MaterialTheme.typography.bodyMedium,
                 )
             }
+
+            // Recommandation + alternatives + indemnité.
+            Panel {
+                Text(textResource(Res.string.recommended), style = MaterialTheme.typography.labelLarge)
+                reco.recommandee?.let { option ->
+                    Text(option.title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Text(option.explanation, style = MaterialTheme.typography.bodySmall, color = colors.onSurfaceVariant)
+                    option.etaMillis?.let { arrival ->
+                        Text(
+                            textResource(Res.string.estimated_arrival_clock, clockFromMillis(arrival)),
+                            style = MaterialTheme.typography.bodyMedium,
+                        )
+                    }
+                }
+                if (reco.alternatives.isNotEmpty()) {
+                    HorizontalDivider()
+                    Text("Autres possibilités", style = MaterialTheme.typography.labelLarge)
+                    reco.alternatives.forEach { option ->
+                        Text("•  ${option.title}", style = MaterialTheme.typography.bodyMedium)
+                    }
+                }
+                reco.indemnite?.let { indemnite ->
+                    HorizontalDivider()
+                    Text("💶  ${indemnite.title}", fontWeight = FontWeight.SemiBold)
+                    Text(indemnite.explanation, style = MaterialTheme.typography.bodySmall, color = colors.onSurfaceVariant)
+                }
+                Button(
+                    onClick = onOptions,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(containerColor = HeaderRed, contentColor = Color.White),
+                ) {
+                    Text(textResource(Res.string.more_options))
+                }
+            }
+
+            // Dernier message brut + fiabilité de l'information.
+            Panel {
+                Text(textResource(Res.string.latest_message), style = MaterialTheme.typography.titleMedium)
+                disruption.messages.maxByOrNull { it.timestampMillis }?.let { Text(it.text) }
+                HorizontalDivider()
+                Text(textResource(Res.string.lines, disruption.affectedLines.joinToString()))
+                Text(textResource(Res.string.confidence, (disruption.confidence * 100).toInt()))
+            }
         }
-        Button(
-            onClick = onOptions,
-            modifier = Modifier.fillMaxWidth(),
-            colors = ButtonDefaults.buttonColors(containerColor = HeaderRed, contentColor = Color.White),
-        ) {
-            Text(textResource(Res.string.more_options))
-        }
-    }
-    Panel {
-        Text(textResource(Res.string.faq), style = MaterialTheme.typography.titleMedium)
-        if (waitOption != null) {
-            FaqEntry(textResource(Res.string.faq_wait), optionReason(waitOption), textResource(Res.string.sbb_timetable_url))
-            HorizontalDivider()
-        }
-        FaqEntry(
-            textResource(Res.string.faq_ticket),
-            textResource(Res.string.faq_ticket_answer),
-            textResource(Res.string.sbb_passenger_rights_url),
-        )
-        HorizontalDivider()
-        FaqEntry(
-            textResource(Res.string.faq_last_train),
-            textResource(Res.string.faq_last_train_answer),
-            textResource(Res.string.sbb_passenger_rights_url) + "#anchor3",
-        )
-    }
-    Panel {
-        Text(textResource(Res.string.latest_message), style = MaterialTheme.typography.titleMedium)
-        if (disruption.messages.isNotEmpty()) Text(textResource(Res.string.demo_message))
-        HorizontalDivider()
-        Text(textResource(Res.string.lines, disruption.affectedLines.joinToString()))
-        Text(textResource(Res.string.confidence, (disruption.confidence * 100).toInt()))
-        Text(textResource(Res.string.history_missing), color = colors.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
     }
     TimelineCaption()
+}
+
+@Composable
+private fun ReplaySlider(ui: AssistUiState, onCursor: (Long) -> Unit) {
+    val min = ui.minMillis
+    val max = ui.maxMillis
+    val cursor = ui.curseurMillis
+    if (min == null || max == null || cursor == null || max <= min) return
+    Panel {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text("Rejouer l'incident", Modifier.weight(1f), style = MaterialTheme.typography.titleMedium)
+            Text(
+                clockFromMillis(cursor),
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.primary,
+                fontWeight = FontWeight.Bold,
+            )
+        }
+        Slider(
+            value = cursor.toFloat(),
+            onValueChange = { onCursor(it.toLong()) },
+            valueRange = min.toFloat()..max.toFloat(),
+        )
+    }
 }
 
 @Composable
