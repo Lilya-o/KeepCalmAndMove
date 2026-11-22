@@ -27,11 +27,15 @@ data class FaitsExtraits(
     val repriseHeure: String? = null,
     /** Durée annoncée en minutes (ex. « pronostic 60' »), sinon null. */
     val dureeMinutes: Int? = null,
+    /** Le DERNIER message dit que le trafic a repris (« Service resumed »…). */
+    val resolue: Boolean = false,
+    /** Combien de fois l'heure de reprise annoncée a été repoussée (ex. 18:30 → 20:30 → 21:00 = 2). */
+    val reportsDeLaFin: Int = 0,
     val source: SourceDesFaits = SourceDesFaits.REGLES,
 ) {
     /** Les règles ont-elles compris l'essentiel ? Si oui, inutile d'appeler l'IA. */
     val suffisant: Boolean
-        get() = categorie != CategorieCause.INCONNUE &&
+        get() = resolue || categorie != CategorieCause.INCONNUE &&
                 (dureeIndeterminee || repriseHeure != null || dureeMinutes != null)
 }
 
@@ -64,7 +68,34 @@ object ExtracteurParRegles {
                 else -> Tendance.INCONNUE
             },
             repriseHeure = heureDeReprise(minuscule),
+            resolue = dernierMessageDitResolu(disruption),
+            reportsDeLaFin = compterReports(disruption),
         )
+    }
+
+    /** Le message le plus récent annonce-t-il la fin de la perturbation ? */
+    internal fun dernierMessageDitResolu(d: Disruption): Boolean {
+        val dernier = d.messages.maxByOrNull { it.timestampMillis }?.text?.lowercase() ?: return false
+        return EXPRESSIONS_RESOLU.any { dernier.contains(it) }
+    }
+
+    /**
+     * Compte les reports de l'heure de reprise, message après message.
+     * Données réelles (Renens, 17.09.2026) : 18:30 → 20:30 → 21:00 → 23:59 = 3 reports.
+     * Une heure annoncée qui recule souvent est une heure à laquelle il ne faut pas trop croire.
+     */
+    internal fun compterReports(d: Disruption): Int {
+        var precedente: Int? = null
+        var reports = 0
+        d.messages.sortedBy { it.timestampMillis }.forEach { m ->
+            val heure = heureDeReprise(m.text.lowercase()) ?: return@forEach
+            val (h, min) = heure.split(':').map { it.toInt() }
+            val minutes = h * 60 + min
+            val avant = precedente
+            if (avant != null && minutes > avant) reports++
+            precedente = minutes
+        }
+        return reports
     }
 
     /**
@@ -107,6 +138,8 @@ object ExtracteurParRegles {
         "déraillement", "entgleisung", "deragliamento", "derailment",
         "caténaire", "fahrleitung", "inondation", "überschwemmung", "hochwasser", "alluvione", "flood",
         "avalanche", "lawine", "valanga", "dégâts", "schaden",
+        // Anglais (vus dans les données SBB : « overhead contact lines have been torn off »)
+        "torn", "overhead", "catenary", "smoke", "damaged",
     )
     val EXPRESSIONS_ACCIDENT_DE_PERSONNE = listOf(
         "accident de personne", "personenunfall", "incidente a una persona", "person struck",
@@ -114,6 +147,8 @@ object ExtracteurParRegles {
     val MOTS_PANNE_TECHNIQUE = listOf(
         "dérangement", "panne", "störung", "guasto", "défaut", "defekt", "technique", "technisch",
         "technical", "signal", "aiguillage", "weiche", "stellwerk", "enclenchement",
+        // Anglais (vus dans les données SBB : « Power failure », « defect », « fault »)
+        "failure", "fault", "faulty", "defect", "defective", "malfunction", "breakdown",
     )
     val MOTS_BUS_REMPLACEMENT = listOf("ersatzbus", "bahnersatz", "ev")
     val EXPRESSIONS_BUS_REMPLACEMENT = listOf(
@@ -121,13 +156,18 @@ object ExtracteurParRegles {
     )
     val EXPRESSIONS_DUREE_INDETERMINEE = listOf(
         "indéterminé", "indetermine", "durée inconnue", "unbestimmt", "unbekannt", "indeterminat", "unknown",
+        "not known", "not possible to provide",
     )
     val EXPRESSIONS_AGGRAVATION = listOf(
         "prolong", "s'aggrave", "aggrav", "verlänger", "verschlechter", "prolungat", "extended",
+    )
+    /** Fin de la perturbation (dernier message). Formulations précises : « reprise prévue vers 18:45 » n'en fait pas partie. */
+    val EXPRESSIONS_RESOLU = listOf(
+        "service resumed", "has been resumed", "have been resumed", "is now over", "end of fault",
+        "le trafic a repris", "trafic est rétabli", "circulation est rétablie", "trafic ferroviaire a repris",
+        "wieder aufgenommen", "verkehr läuft wieder", "è ripreso", "è stato ripristinato",
     )
     val EXPRESSIONS_AMELIORATION = listOf(
         "reprise progressive", "rétabli", "retabli", "wieder in betrieb", "normalisier", "ripristinat", "restored",
     )
 }
-
-

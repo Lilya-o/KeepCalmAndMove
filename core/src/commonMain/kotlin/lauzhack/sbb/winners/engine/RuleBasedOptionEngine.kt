@@ -90,14 +90,14 @@ class RuleBasedOptionEngine(
         else 1.0 - exp(-heuresRestantes / dureeTypiqueHeures(categorie, disruption.severity))
 
         val fin = disruption.estimatedEndMillis
-        val confiance = disruption.confidence.toDouble().coerceIn(0.0, 1.0)
+        val confiance = confianceEffective(disruption, faits)
         val chanceBrute = when {
             fin == null -> chanceSelonLaCause                  // fin inconnue : on estime selon la cause
             fin <= finService -> confiance                     // reprise annoncée avant la fin du service
             else -> (1.0 - confiance) * chanceSelonLaCause     // reprise annoncée après la fin du service
         }
         // Les messages disent que ça s'aggrave ou que ça s'améliore : on ajuste un peu.
-        val chance = when (faits.tendance) {
+        val chance = if (faits.resolue) 1.0 else when (faits.tendance) {
             Tendance.AGGRAVATION -> chanceBrute * 0.7
             Tendance.AMELIORATION -> chanceBrute * 1.2
             else -> chanceBrute
@@ -111,12 +111,22 @@ class RuleBasedOptionEngine(
         }
 
         val conseil = buildString {
-            if (chance < SEUIL_REPRISE_IMPROBABLE) {
+            if (faits.resolue) {
+                append("Le trafic a repris normalement. Quelques retards restent possibles : vérifie ton train dans l'horaire en ligne.")
+            } else if (chance < SEUIL_REPRISE_IMPROBABLE) {
                 append("Trafic interrompu (${disruption.cause}). ")
-                append("Il est peu probable qu'un train circule encore avant le matin (chance estimée : ${pct(chance)}). ")
+                val bloqueJusquAuMatin = fin == null || fin > finService
+                if (bloqueJusquAuMatin) {
+                    append("Il est peu probable qu'un train circule encore avant le matin (chance estimée : ${pct(chance)}). ")
+                    if (faits.reportsDeLaFin > 0) append("L'heure de reprise a déjà été repoussée ${faits.reportsDeLaFin} fois. ")
+                } else {
+                    append("Reprise annoncée vers ${heure(fin!!)}, mais ")
+                    if (faits.reportsDeLaFin > 0) append("cette heure a déjà été repoussée ${faits.reportsDeLaFin} fois : ")
+                    append("ne compte pas trop dessus. ")
+                }
                 if (busAnnonce) append("Des bus de remplacement sont annoncés : renseigne-toi sur le quai ou au point d'information. ")
                 else append("Va voir le personnel CFF et demande s'il y a un bus de remplacement. ")
-                when (responsabilite) {
+                if (bloqueJusquAuMatin) when (responsabilite) {
                     Responsabilite.PAS_LA_COMPAGNIE ->
                         append("La cause est météorologique ou naturelle : un taxi ou un hôtel resteraient à tes frais. ")
                     else ->
@@ -125,7 +135,12 @@ class RuleBasedOptionEngine(
                 append("Garde ton billet et toutes tes quittances.")
             } else if (fin != null) {
                 append("Reprise annoncée vers ${heure(fin)}. ")
-                append("Information encore susceptible de changer : vérifie les mises à jour.")
+                if (faits.reportsDeLaFin > 0) {
+                    val fois = if (faits.reportsDeLaFin == 1) "une fois" else "${faits.reportsDeLaFin} fois"
+                    append("Attention : cette heure a déjà été repoussée $fois, garde une marge.")
+                } else {
+                    append("Information encore susceptible de changer : vérifie les mises à jour.")
+                }
             } else {
                 append("La fin de la perturbation n'est pas encore connue. ")
                 append("Une reprise avant la fin du service reste possible (chance estimée : ${pct(chance)}).")
@@ -146,13 +161,35 @@ class RuleBasedOptionEngine(
         val a = analyser(disruption, journey, faits)
         val options = mutableListOf<Option>()
 
+        // Perturbation terminée : une seule option, prendre son train normalement.
+        if (faits.resolue) {
+            val maintenantResolu = maintenant(disruption, journey)
+            val arrivee = maxOf(
+                journey.plannedArrivalMillis,
+                maintenantResolu + (journey.plannedArrivalMillis - journey.departureMillis),
+            )
+            return listOf(
+                Option(
+                    type = OptionType.WAIT,
+                    title = "Prendre ton train normalement",
+                    etaMillis = arrivee,
+                    costToTravellerChf = 0.0,
+                    reimbursable = false,
+                    effort = EFFORT_ATTENDRE,
+                    reliability = FIABILITE_TRAFIC_REPRIS,
+                    explanation = "Le trafic a repris. Prends ton train comme prévu (arrivée vers ${heure(arrivee)}). Quelques retards restent possibles.",
+                ),
+            )
+        }
+
         val maintenant = maintenant(disruption, journey)
         val dureeTrajet = journey.plannedArrivalMillis - journey.departureMillis
         val finConnue = disruption.estimatedEndMillis
 
         // ---- Quand arriverait-on en ATTENDANT ? ---------------------------------
         val arriveeAttente = when {
-            a.repriseImprobable -> maxOf(finConnue ?: 0L, a.premierTrainMillis) + dureeTrajet // demain matin
+            a.repriseImprobable && (finConnue == null || finConnue > a.finDuServiceMillis) ->
+                maxOf(finConnue ?: 0L, a.premierTrainMillis) + dureeTrajet // demain matin
             finConnue != null -> maxOf(finConnue, journey.departureMillis) + dureeTrajet
             else -> maxOf(maintenant + ATTENTE_SI_FIN_INCONNUE_MILLIS, journey.departureMillis) + dureeTrajet
         }
@@ -167,10 +204,11 @@ class RuleBasedOptionEngine(
                 finConnue > a.finDuServiceMillis ||
                         jour(arriveeAttente) > jour(journey.plannedArrivalMillis)
                 )
-        val bloqueProbable = bloqueCertain || a.repriseImprobable
+        val nuitProbable = a.repriseImprobable && finConnue == null
+        val bloqueProbable = bloqueCertain || nuitProbable
 
         // ---- Option ATTENDRE -----------------------------------------------------
-        options += if (a.repriseImprobable) {
+        options += if (a.repriseImprobable && (finConnue == null || finConnue > a.finDuServiceMillis)) {
             Option(
                 type = OptionType.WAIT,
                 title = "Attendre à la gare (pas de train probable avant le matin)",
@@ -185,15 +223,16 @@ class RuleBasedOptionEngine(
         } else {
             Option(
                 type = OptionType.WAIT,
-                title = "Attendre la reprise du trafic",
+                title = if (a.repriseImprobable) "Attendre la reprise annoncée (heure peu fiable)" else "Attendre la reprise du trafic",
                 etaMillis = arriveeAttente,
                 costToTravellerChf = 0.0,
                 reimbursable = Rules.aDroitAIndemnite(retardAttenteMin),
                 effort = EFFORT_ATTENDRE,
-                reliability = if (finConnue == null) FIABILITE_FIN_INCONNUE else disruption.confidence.toDouble(),
+                reliability = if (finConnue == null) FIABILITE_FIN_INCONNUE else confianceEffective(disruption, faits),
                 explanation = buildString {
                     append("Arrivée estimée à ${heure(arriveeAttente)}, soit environ $retardAttenteMin min de retard.")
                     if (finConnue == null) append(" La fin de la perturbation n'est pas encore connue : cette estimation est incertaine.")
+                    else if (faits.reportsDeLaFin > 0) append(" L'heure de reprise a déjà été repoussée : estimation fragile.")
                 },
             )
         }
@@ -287,7 +326,7 @@ class RuleBasedOptionEngine(
                     costToTravellerChf = 0.0,
                     reimbursable = true,
                     effort = EFFORT_INDEMNITE,
-                    reliability = disruption.confidence.toDouble(),
+                    reliability = confianceEffective(disruption, faits),
                     explanation = "Avec environ $retardAttenteMin min de retard, tu peux demander $pourcentage % du prix de ton billet.",
                 )
             } else {
@@ -325,23 +364,23 @@ class RuleBasedOptionEngine(
     fun scored(options: List<Option>, profile: Profile): List<Pair<Option, Double>> {
         if (options.isEmpty()) return emptyList()
 
-        val etasConnues = options.mapNotNull { it.etaMillis }.map { it.toDouble() }
-        val etaMin = etasConnues.minOrNull()
-        val etaMax = etasConnues.maxOrNull()
-        val coutMin = options.minOf { it.costToTravellerChf.toDouble() }
-        val coutMax = options.maxOf { it.costToTravellerChf.toDouble() }
-        val effortMin = options.minOf { it.effort.toDouble() }
-        val effortMax = options.maxOf { it.effort.toDouble() }
+        // Échelles FIXES (et non min-max) : une option extrême, comme « hôtel puis train demain matin »,
+        // ne doit pas écraser les différences entre les autres. Constaté sur les données réelles :
+        // avec le min-max, « attendre jusqu'à 00:35 » battait un bus arrivant à 22:37.
+        //  - temps : minutes de plus que l'option la plus rapide (0 → 0, 4 h ou plus → 1)
+        //  - coût  : 0 CHF → 0, [COUT_REFERENCE_CHF] ou plus → 1
+        //  - effort : déjà entre 0 et 1
+        val etaMin = options.mapNotNull { it.etaMillis }.minOrNull()
 
         val p = poids(profile)
 
         return options.map { option ->
             // 0 = meilleur, 1 = pire. Heure d'arrivée inconnue = pire cas pour le temps.
-            val t = option.etaMillis
-                ?.let { normaliser(it.toDouble(), etaMin!!, etaMax!!) }
-                ?: 1.0
-            val c = normaliser(option.costToTravellerChf.toDouble(), coutMin, coutMax)
-            val e = normaliser(option.effort.toDouble(), effortMin, effortMax)
+            val eta = option.etaMillis
+            val t = if (eta == null || etaMin == null) 1.0
+            else ((eta - etaMin).toDouble() / ECHELLE_TEMPS_MILLIS).coerceIn(0.0, 1.0)
+            val c = (option.costToTravellerChf.toDouble() / COUT_REFERENCE_CHF).coerceIn(0.0, 1.0)
+            val e = option.effort.toDouble().coerceIn(0.0, 1.0)
 
             val noteBrute = 1.0 - (p.temps * t + p.cout * c + p.effort * e)
             // Pénalité pour les options peu fiables : fiabilité 1 → ×1, fiabilité 0 → ×0.5
@@ -391,9 +430,15 @@ class RuleBasedOptionEngine(
         return if (severity == Severity.CRITICAL) base * 1.5 else base
     }
 
-    /** Ramène une valeur entre 0 (= le min) et 1 (= le max). */
-    private fun normaliser(valeur: Double, min: Double, max: Double): Double =
-        if (max - min < 1e-9) 0.0 else ((valeur - min) / (max - min)).coerceIn(0.0, 1.0)
+    /**
+     * Confiance dans l'heure de reprise annoncée, réduite à chaque report
+     * (×[FACTEUR_PAR_REPORT] par report, jamais sous [CONFIANCE_MIN]).
+     */
+    private fun confianceEffective(d: Disruption, faits: FaitsExtraits): Double {
+        var c = d.confidence.toDouble().coerceIn(0.0, 1.0)
+        repeat(faits.reportsDeLaFin) { c *= FACTEUR_PAR_REPORT }
+        return c.coerceAtLeast(CONFIANCE_MIN)
+    }
 
     private fun enMinutes(millis: Long): Long = millis / MINUTE_MILLIS
 
@@ -423,6 +468,14 @@ class RuleBasedOptionEngine(
         // --- Score ---
         const val POIDS_MINIMUM = 0.2
         const val PENALITE_FIABILITE_MAX = 0.5
+        /** Écarts de temps au-delà de 4 h comptés comme « le pire ». */
+        const val ECHELLE_TEMPS_MILLIS: Long = 4 * HEURE_MILLIS
+        /** Coût à partir duquel une option compte comme « la plus chère » (environ un taxi Genève–Lausanne). */
+        const val COUT_REFERENCE_CHF = 200.0
+        /** Chaque report de l'heure de reprise fait baisser la confiance (données réelles : 3 reports en une soirée). */
+        const val FACTEUR_PAR_REPORT = 0.75
+        const val CONFIANCE_MIN = 0.2
+        const val FIABILITE_TRAFIC_REPRIS = 0.9
         /** En dessous de cette chance, on considère qu'aucun train ne repassera ce soir. */
         const val SEUIL_REPRISE_IMPROBABLE = 0.4
 
