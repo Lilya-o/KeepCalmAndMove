@@ -92,4 +92,12 @@
     <string name="de_station_to">Nach</string>
     <string name="de_your_trip">Ihre Reise</string>
     <string name="de_trip_tagline">Von der olympischen Hauptstadt zur Stadt am Genfersee — rund 36 Min. bei normalem Betrieb.</string>
+    <string name="de_listen_recommendation">Auf Französisch anhören</string>
+    <string name="de_advice_in_french">Die Reiseempfehlung ist auf Französisch.</string>
+    <string name="de_train_tonight_probability">Wahrscheinlichkeit, dass heute Abend ein Zug fährt: %1$d %</string>
+    <string name="de_recommendation_unavailable">Die Reiseempfehlung ist derzeit nicht verfügbar.</string>
+    <string name="de_recommendation_loading">Reiseempfehlung wird geladen…</string>
+    <string name="de_alternative_route">Alternative Route</string>
+    <string name="de_taxi_option">Taxi</string>
+    <string name="de_compensation_option">Entschädigung</string>
 </resources>

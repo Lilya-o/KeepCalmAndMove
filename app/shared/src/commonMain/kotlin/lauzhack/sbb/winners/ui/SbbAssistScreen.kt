@@ -84,6 +84,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.intl.Locale
 import lauzhack.sbb.winners.SampleData
+import lauzhack.sbb.winners.audio.BoutonEcouter
 import androidx.compose.ui.unit.dp
 import keepcalmandmove.app.shared.generated.resources.*
 import lauzhack.sbb.winners.model.Option
@@ -756,7 +757,7 @@ private fun JourneyDetail(connection: DemoConnection, onDelay: () -> Unit, onOff
                 style = MaterialTheme.typography.bodyMedium,
                 color = colors.onSurfaceVariant,
             )
-            if (connection.delayed) DelayClock()
+            if (connection.delayed) DelayClock(announce = true)
         }
     }
     Panel {
@@ -828,10 +829,12 @@ private fun TicketOffers(connection: DemoConnection) {
 }
 
 @Composable
-private fun OccupancyIcon(occupancy: Occupancy) {
+private fun OccupancyIcon(occupancy: Occupancy, announce: Boolean = false) {
     val colors = MaterialTheme.colorScheme
     val ink = if (occupancy == Occupancy.VERY_HIGH) colors.primary else colors.onSurface
-    Canvas(Modifier.size(width = 28.dp, height = 16.dp)) {
+    val description = textResource(occupancy.label)
+    val iconModifier = Modifier.size(width = 28.dp, height = 16.dp)
+    Canvas(if (announce) iconModifier.semantics { contentDescription = description } else iconModifier) {
         for (person in 0 until 3) {
             val x = size.width * (.18f + person * .32f)
             val color = if (person <= occupancy.ordinal) ink else colors.onSurfaceVariant.copy(alpha = .45f)
@@ -846,14 +849,12 @@ private fun OccupancyIcon(occupancy: Occupancy) {
 
 @Composable
 private fun ClassOccupancy(label: StringResource, occupancy: Occupancy) {
-    val description = textResource(occupancy.label)
     Row(
-        modifier = Modifier.semantics { contentDescription = description },
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         Text(textResource(label), style = MaterialTheme.typography.bodySmall)
-        OccupancyIcon(occupancy)
+        OccupancyIcon(occupancy, announce = true)
     }
 }
 
@@ -932,8 +933,10 @@ private fun DelayLabel() {
 }
 
 @Composable
-private fun DelayClock() {
-    Canvas(Modifier.size(17.dp).background(HeaderRed, RoundedCornerShape(4.dp)).padding(2.dp)) {
+private fun DelayClock(announce: Boolean = false) {
+    val description = textResource(Res.string.delay)
+    val iconModifier = Modifier.size(17.dp).background(HeaderRed, RoundedCornerShape(4.dp)).padding(2.dp)
+    Canvas(if (announce) iconModifier.semantics { contentDescription = description } else iconModifier) {
         drawCircle(Color.White, size.minDimension * .39f, style = Stroke(1.dp.toPx()))
         val up = center.copy(y = center.y - 3.dp.toPx())
         val right = center.copy(x = center.x + 3.dp.toPx())
@@ -1147,7 +1150,13 @@ private fun DelayInformation(ui: AssistUiState, onCursor: (Long) -> Unit, onOpti
     when {
         reco == null || disruption == null -> Panel {
             Text(
-                ui.erreur ?: textResource(Res.string.status_may_change),
+                textResource(
+                    when {
+                        ui.erreur != null -> Res.string.recommendation_unavailable
+                        ui.chargement -> Res.string.recommendation_loading
+                        else -> Res.string.status_may_change
+                    },
+                ),
                 style = MaterialTheme.typography.bodyMedium,
                 color = if (ui.erreur != null) colors.primary else colors.onSurfaceVariant,
             )
@@ -1157,6 +1166,10 @@ private fun DelayInformation(ui: AssistUiState, onCursor: (Long) -> Unit, onOpti
             Panel {
                 Text(reco.titre, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                 Text(reco.conseil, style = MaterialTheme.typography.bodyMedium)
+                if (LocalLanguage.current != "fr") {
+                    Text(textResource(Res.string.advice_in_french), style = MaterialTheme.typography.bodySmall)
+                }
+                BoutonEcouter(reco.titre, reco.conseil, textResource(Res.string.listen_recommendation))
                 HorizontalDivider()
                 ui.journey?.let { journey ->
                     reco.retardSiAttenteMinutes(journey)?.let { retard ->
@@ -1177,7 +1190,7 @@ private fun DelayInformation(ui: AssistUiState, onCursor: (Long) -> Unit, onOpti
                     }
                 }
                 Text(
-                    "Chance qu'un train passe ce soir : ${reco.chanceTrainCeSoirPourcent} %",
+                    textResource(Res.string.train_tonight_probability, reco.chanceTrainCeSoirPourcent),
                     style = MaterialTheme.typography.bodyMedium,
                 )
             }
@@ -1186,7 +1199,7 @@ private fun DelayInformation(ui: AssistUiState, onCursor: (Long) -> Unit, onOpti
             Panel {
                 Text(textResource(Res.string.recommended), style = MaterialTheme.typography.labelLarge)
                 reco.recommandee?.let { option ->
-                    Text(option.title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Text(engineOptionTitle(option), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                     Text(option.explanation, style = MaterialTheme.typography.bodySmall, color = colors.onSurfaceVariant)
                     option.etaMillis?.let { arrival ->
                         Text(
@@ -1197,14 +1210,14 @@ private fun DelayInformation(ui: AssistUiState, onCursor: (Long) -> Unit, onOpti
                 }
                 if (reco.alternatives.isNotEmpty()) {
                     HorizontalDivider()
-                    Text("Autres possibilités", style = MaterialTheme.typography.labelLarge)
+                    Text(textResource(Res.string.other_travel_options), style = MaterialTheme.typography.labelLarge)
                     reco.alternatives.forEach { option ->
-                        Text("•  ${option.title}", style = MaterialTheme.typography.bodyMedium)
+                        Text("•  ${engineOptionTitle(option)}", style = MaterialTheme.typography.bodyMedium)
                     }
                 }
                 reco.indemnite?.let { indemnite ->
                     HorizontalDivider()
-                    Text("💶  ${indemnite.title}", fontWeight = FontWeight.SemiBold)
+                    Text(engineOptionTitle(indemnite), fontWeight = FontWeight.SemiBold)
                     Text(indemnite.explanation, style = MaterialTheme.typography.bodySmall, color = colors.onSurfaceVariant)
                 }
                 Button(
@@ -1471,7 +1484,7 @@ private fun Options(ui: AssistUiState, onSelect: (Int) -> Unit) {
             ) {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     if (recommended) Text(textResource(Res.string.recommended), style = MaterialTheme.typography.labelLarge)
-                    Text(option.title, style = MaterialTheme.typography.titleLarge)
+                    Text(engineOptionTitle(option), style = MaterialTheme.typography.titleLarge)
                     option.etaMillis?.let {
                         Text(
                             textResource(Res.string.estimated_arrival_clock, clockFromMillis(it)),
@@ -1574,10 +1587,22 @@ private fun OptionDetail(option: Option) {
     Text(textResource(Res.string.steps_missing))
 }
 
+@Composable
+private fun engineOptionTitle(option: Option): String =
+    if (LocalLanguage.current == "fr") option.title else textResource(
+        when (option.type) {
+            OptionType.ALTERNATIVE_ROUTE -> Res.string.alternative_route
+            OptionType.WAIT -> Res.string.wait_title
+            OptionType.TAXI -> Res.string.taxi_option
+            OptionType.HOTEL -> Res.string.hotel_option
+            OptionType.REFUND -> Res.string.compensation_option
+        },
+    )
+
 /** Détail d'une option produite par le moteur (heures réelles via clockFromMillis). */
 @Composable
 private fun EngineOptionDetail(option: Option) {
-    Text(option.title, style = MaterialTheme.typography.titleLarge)
+    Text(engineOptionTitle(option), style = MaterialTheme.typography.titleLarge)
     Text(option.explanation)
     val eta = option.etaMillis
     Text(

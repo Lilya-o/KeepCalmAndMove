@@ -46,7 +46,6 @@ internal fun AssistBottomNavigation(
                         modifier = Modifier.weight(1f)
                             .heightIn(min = 68.dp)
                             .selectable(active, role = Role.Tab, onClick = { onSelected(index) })
-                            .semantics { if (!active) contentDescription = label }
                             .padding(top = 5.dp, bottom = 4.dp),
                         horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
@@ -55,7 +54,12 @@ internal fun AssistBottomNavigation(
                                 .background(if (active) colors.onSurface else Color.Transparent, CircleShape),
                             contentAlignment = Alignment.Center,
                         ) {
-                            AssistNavIcon(index, if (active) colors.surface else colors.onSurface, Modifier.size(22.dp))
+                            val iconModifier = Modifier.size(22.dp)
+                            AssistNavIcon(
+                                index,
+                                if (active) colors.surface else colors.onSurface,
+                                if (active) iconModifier else iconModifier.semantics { contentDescription = label },
+                            )
                         }
                         if (active) {
                             Text(
