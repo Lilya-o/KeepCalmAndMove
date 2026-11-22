@@ -85,4 +85,9 @@
     <string name="fr_other_travel_options">Autres moyens de transport</string>
     <string name="fr_train_fare_included">Inclus dans le prix du billet de train.</string>
     <string name="fr_taxi_separate_cost">Taxi en supplément : %1$s CHF</string>
+    <string name="fr_menu">Menu</string>
+    <string name="fr_help_and_contact">Aide et contact</string>
+    <string name="fr_select_connection">Choisir une correspondance</string>
+    <string name="fr_station_from">Départ</string>
+    <string name="fr_station_to">Arrivée</string>
 </resources>

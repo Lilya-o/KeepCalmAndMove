@@ -9,11 +9,13 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -34,6 +36,12 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.DrawerValue
+import androidx.compose.material3.ModalDrawerSheet
+import androidx.compose.material3.ModalNavigationDrawer
+import androidx.compose.material3.NavigationDrawerItem
+import androidx.compose.material3.NavigationDrawerItemDefaults
+import androidx.compose.material3.rememberDrawerState
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.ButtonDefaults
@@ -52,6 +60,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -74,6 +83,7 @@ import lauzhack.sbb.winners.model.Option
 import lauzhack.sbb.winners.model.OptionType
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
+import kotlinx.coroutines.launch
 
 private enum class Screen(val title: StringResource) {
     JOURNEY(Res.string.plan),
@@ -188,7 +198,7 @@ private fun clockFromMillis(millis: Long): String {
 }
 
 @Composable
-internal fun SbbAssistScreen() {
+internal fun SbbAssistScreen(desktop: Boolean = false) {
     var screen by rememberSaveable { mutableStateOf(Screen.JOURNEY) }
     var reversed by rememberSaveable { mutableStateOf(false) }
     var connectionIndex by rememberSaveable { mutableStateOf(0) }
@@ -208,65 +218,86 @@ internal fun SbbAssistScreen() {
     CompositionLocalProvider(LocalLanguage provides languageCode) {
         val colors = if (dark) DarkRailColors else LightRailColors
         MaterialTheme(colorScheme = colors) {
-            Surface(Modifier.fillMaxSize(), color = colors.outlineVariant) {
-                Box(
-                    Modifier.fillMaxSize()
-                        .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal)),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Surface(
-                        Modifier.widthIn(max = 400.dp).heightIn(max = 860.dp).fillMaxSize(),
-                        color = colors.background,
-                    ) {
-                        Column {
-                            PhoneHeader(
-                                screen = screen,
-                                dark = dark,
-                                languageCode = languageCode,
-                                onBack = if (screen in bottomTabs) null else {
-                                    {
-                                        screen = when (screen) {
-                                            Screen.DETAIL -> Screen.OPTIONS
-                                            Screen.OPTIONS, Screen.OFFERS -> Screen.SITUATION
-                                            else -> Screen.JOURNEY
-                                        }
-                                    }
-                                },
-                                onToggleTheme = { darkOverride = !dark },
-                                onLanguageChange = { language = it },
-                            )
-                            key(screen) {
-                                Column(
-                                    Modifier.weight(1f).fillMaxWidth()
-                                        .verticalScroll(rememberScrollState()).padding(12.dp),
-                                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                                ) {
-                                    when (screen) {
-                                        Screen.JOURNEY -> JourneyList(reversed, onSwap = { reversed = !reversed }) { index ->
-                                            connectionIndex = index
-                                            screen = Screen.SITUATION
-                                        }
-                                        Screen.SITUATION -> JourneyDetail(
-                                            connection = demoConnections[connectionIndex],
-                                            onDelay = { showInformation = true },
-                                            onOffers = { screen = Screen.OFFERS },
-                                        )
-                                        Screen.OPTIONS -> Options { index ->
-                                            optionIndex = index
-                                            screen = Screen.DETAIL
-                                        }
-                                        Screen.DETAIL -> Panel { TravelChoiceDetail(allChoices[optionIndex]) }
-                                        Screen.OFFERS -> TicketOffers(demoConnections[connectionIndex])
-                                        Screen.TRIPS, Screen.EASY_RIDE, Screen.TICKETS, Screen.SHOP -> Unit
-                                        Screen.PROFILE -> DemoProfile()
-                                    }
-                                }
+            Surface(Modifier.fillMaxSize(), color = if (desktop) colors.background else colors.outlineVariant) {
+                val onBack: (() -> Unit)? = if (screen in bottomTabs) null else {
+                    {
+                        screen = when (screen) {
+                            Screen.DETAIL -> Screen.OPTIONS
+                            Screen.OPTIONS, Screen.OFFERS -> Screen.SITUATION
+                            else -> Screen.JOURNEY
+                        }
+                    }
+                }
+                val body: @Composable () -> Unit = {
+                    key(screen) {
+                        when (screen) {
+                            Screen.JOURNEY -> JourneyList(
+                                reversed,
+                                onSwap = { reversed = !reversed },
+                                desktop = desktop,
+                            ) { index ->
+                                connectionIndex = index
+                                screen = Screen.SITUATION
                             }
-                            AssistBottomNavigation(
-                                labels = bottomTabs.map { textResource(it.title) },
-                                selected = bottomTabs.indexOf(screen).coerceAtLeast(0),
-                                onSelected = { screen = bottomTabs[it] },
+                            Screen.SITUATION -> JourneyDetail(
+                                connection = demoConnections[connectionIndex],
+                                onDelay = { showInformation = true },
+                                onOffers = { screen = Screen.OFFERS },
                             )
+                            Screen.OPTIONS -> Options { index ->
+                                optionIndex = index
+                                screen = Screen.DETAIL
+                            }
+                            Screen.DETAIL -> Panel { TravelChoiceDetail(allChoices[optionIndex]) }
+                            Screen.OFFERS -> TicketOffers(demoConnections[connectionIndex])
+                            Screen.TRIPS, Screen.EASY_RIDE, Screen.TICKETS, Screen.SHOP -> Unit
+                            Screen.PROFILE -> DemoProfile()
+                        }
+                    }
+                }
+                if (desktop) {
+                    DesktopLayout(
+                        screen = screen,
+                        dark = dark,
+                        languageCode = languageCode,
+                        onBack = onBack,
+                        onNavigate = { screen = it },
+                        onToggleTheme = { darkOverride = !dark },
+                        onLanguageChange = { language = it },
+                        content = body,
+                    )
+                } else {
+                    Box(
+                        Modifier.fillMaxSize()
+                            .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal)),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Surface(
+                            Modifier.widthIn(max = 400.dp).heightIn(max = 860.dp).fillMaxSize(),
+                            color = colors.background,
+                        ) {
+                            Column {
+                                PhoneHeader(
+                                    screen = screen,
+                                    dark = dark,
+                                    languageCode = languageCode,
+                                    onBack = onBack,
+                                    onToggleTheme = { darkOverride = !dark },
+                                    onLanguageChange = { language = it },
+                                )
+                                key(screen) {
+                                    Column(
+                                        Modifier.weight(1f).fillMaxWidth()
+                                            .verticalScroll(rememberScrollState()).padding(12.dp),
+                                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                                    ) { body() }
+                                }
+                                AssistBottomNavigation(
+                                    labels = bottomTabs.map { textResource(it.title) },
+                                    selected = bottomTabs.indexOf(screen).coerceAtLeast(0),
+                                    onSelected = { screen = bottomTabs[it] },
+                                )
+                            }
                         }
                     }
                 }
@@ -274,6 +305,7 @@ internal fun SbbAssistScreen() {
                     DelayDialog(
                         ui = ui,
                         onCursor = viewModel::surCurseur,
+                        desktop = desktop,
                         onClose = { showInformation = false },
                         onOptions = {
                             showInformation = false
@@ -284,6 +316,135 @@ internal fun SbbAssistScreen() {
             }
         }
     }
+}
+
+@Composable
+private fun DesktopLayout(
+    screen: Screen,
+    dark: Boolean,
+    languageCode: String,
+    onBack: (() -> Unit)?,
+    onNavigate: (Screen) -> Unit,
+    onToggleTheme: () -> Unit,
+    onLanguageChange: (String) -> Unit,
+    content: @Composable () -> Unit,
+) {
+    val colors = MaterialTheme.colorScheme
+    val drawer = rememberDrawerState(DrawerValue.Closed)
+    val scope = rememberCoroutineScope()
+    val uriHandler = LocalUriHandler.current
+    val helpUrl = textResource(Res.string.sbb_passenger_rights_url)
+
+    ModalNavigationDrawer(
+        drawerState = drawer,
+        gesturesEnabled = false,
+        drawerContent = {
+            ModalDrawerSheet(
+                drawerState = drawer,
+                modifier = Modifier.widthIn(max = 360.dp),
+                drawerContainerColor = Color(0xFF181818),
+                drawerContentColor = Color.White,
+            ) {
+                Column(
+                    Modifier.fillMaxWidth().padding(20.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    val close = textResource(Res.string.close)
+                    IconButton(
+                        onClick = { scope.launch { drawer.close() } },
+                        modifier = Modifier.align(Alignment.End).semantics { contentDescription = close },
+                    ) { Text("×", style = MaterialTheme.typography.titleLarge) }
+                    listOf(Screen.JOURNEY, Screen.OFFERS, Screen.PROFILE).forEach { destination ->
+                        DesktopMenuItem(textResource(destination.title), selected = screen == destination) {
+                            onNavigate(destination)
+                            scope.launch { drawer.close() }
+                        }
+                    }
+                    DesktopMenuItem(textResource(Res.string.help_and_contact)) {
+                        scope.launch { drawer.close() }
+                        uriHandler.openUri(helpUrl)
+                    }
+                }
+            }
+        },
+    ) {
+        Column(Modifier.fillMaxSize()) {
+            Surface(color = colors.surface, contentColor = colors.onSurface) {
+                BoxWithConstraints(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                    val compactHeader = maxWidth < 520.dp
+                    Row(
+                        Modifier.widthIn(max = 1200.dp).fillMaxWidth()
+                            .heightIn(min = 72.dp).padding(horizontal = 16.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        Box(Modifier.weight(1f)) {
+                            TextButton(onClick = { scope.launch { drawer.open() } }) {
+                                Text("☰", Modifier.padding(end = 8.dp))
+                                Text(textResource(Res.string.menu))
+                            }
+                        }
+                        Surface(color = HeaderRed, shape = RoundedCornerShape(5.dp)) {
+                            Box(Modifier.padding(horizontal = 11.dp, vertical = 8.dp)) { SbbMark() }
+                        }
+                        Row(
+                            Modifier.weight(1f),
+                            horizontalArrangement = Arrangement.End,
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            HeaderControls(
+                                dark, languageCode, onToggleTheme, onLanguageChange,
+                                compact = compactHeader,
+                                themeIconColor = colors.onSurface,
+                            )
+                            if (!compactHeader) {
+                                TextButton(onClick = { onNavigate(Screen.PROFILE) }) {
+                                    Text(textResource(Res.string.profile))
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            key(screen) {
+                Box(
+                    Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()),
+                    contentAlignment = Alignment.TopCenter,
+                ) {
+                    Box(Modifier.fillMaxWidth().height(if (screen == Screen.JOURNEY) 140.dp else 120.dp).background(HeaderRed))
+                    Column(
+                        Modifier.widthIn(max = 790.dp).fillMaxWidth()
+                            .padding(horizontal = 24.dp, vertical = 26.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                    ) {
+                        if (screen != Screen.JOURNEY) {
+                            Panel {
+                                if (onBack != null) {
+                                    TextButton(onClick = onBack) { Text(textResource(Res.string.back)) }
+                                }
+                                Text(textResource(screen.title), style = MaterialTheme.typography.headlineSmall)
+                            }
+                        }
+                        content()
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun DesktopMenuItem(label: String, selected: Boolean = false, onClick: () -> Unit) {
+    NavigationDrawerItem(
+        label = { Text(label, style = MaterialTheme.typography.titleMedium) },
+        selected = selected,
+        onClick = onClick,
+        colors = NavigationDrawerItemDefaults.colors(
+            selectedContainerColor = Color(0xFF343434),
+            selectedTextColor = Color.White,
+            unselectedTextColor = Color.White,
+        ),
+    )
 }
 
 @Composable
@@ -352,7 +513,7 @@ private fun SbbMark(modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun JourneyList(reversed: Boolean, onSwap: () -> Unit, onOpen: (Int) -> Unit) {
+private fun JourneyList(reversed: Boolean, onSwap: () -> Unit, desktop: Boolean, onOpen: (Int) -> Unit) {
     val journey = SampleData.journey
     val origin = if (reversed) journey.destination else journey.origin
     val destination = if (reversed) journey.origin else journey.destination
@@ -374,12 +535,12 @@ private fun JourneyList(reversed: Boolean, onSwap: () -> Unit, onOpen: (Int) -> 
                         drawCircle(ink, 2.dp.toPx(), point)
                     }
                 }
-                Box(Modifier.size(width = 12.dp, height = 64.dp))
+                Box(Modifier.size(width = 12.dp, height = if (desktop) 82.dp else 64.dp))
             }
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(origin, style = MaterialTheme.typography.titleMedium)
+                StationField(origin, if (desktop) Res.string.station_from else null)
                 HorizontalDivider()
-                Text(destination, style = MaterialTheme.typography.titleMedium)
+                StationField(destination, if (desktop) Res.string.station_to else null)
             }
             val swapLabel = textResource(Res.string.swap_stations)
             IconButton(
@@ -408,6 +569,14 @@ private fun JourneyList(reversed: Boolean, onSwap: () -> Unit, onOpen: (Int) -> 
         Panel { Text(textResource(Res.string.no_reverse_connections)) }
         return
     }
+    if (desktop) {
+        Text(
+            textResource(Res.string.select_connection),
+            modifier = Modifier.padding(top = 16.dp),
+            style = MaterialTheme.typography.headlineSmall,
+            fontWeight = FontWeight.Bold,
+        )
+    }
     Text(
         textResource(Res.string.demo_timetable),
         style = MaterialTheme.typography.labelMedium,
@@ -433,6 +602,20 @@ private fun JourneyList(reversed: Boolean, onSwap: () -> Unit, onOpen: (Int) -> 
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun StationField(station: String, label: StringResource?) {
+    Column {
+        if (label != null) {
+            Text(
+                textResource(label),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        Text(station, style = MaterialTheme.typography.titleMedium)
     }
 }
 
@@ -674,10 +857,18 @@ private fun TimelineCaption() {
 }
 
 @Composable
-private fun DelayDialog(ui: AssistUiState, onCursor: (Long) -> Unit, onClose: () -> Unit, onOptions: () -> Unit) {
+private fun DelayDialog(
+    ui: AssistUiState,
+    onCursor: (Long) -> Unit,
+    desktop: Boolean,
+    onClose: () -> Unit,
+    onOptions: () -> Unit,
+) {
     Dialog(onDismissRequest = onClose, properties = DialogProperties(usePlatformDefaultWidth = false)) {
         Surface(
-            Modifier.widthIn(max = 400.dp).fillMaxWidth(.96f).fillMaxHeight(.92f),
+            Modifier.widthIn(max = if (desktop) 700.dp else 400.dp)
+                .fillMaxWidth(if (desktop) .90f else .96f)
+                .fillMaxHeight(.92f),
             shape = RoundedCornerShape(18.dp),
             color = MaterialTheme.colorScheme.background,
         ) {
@@ -695,8 +886,9 @@ private fun DelayDialog(ui: AssistUiState, onCursor: (Long) -> Unit, onClose: ()
                     }
                 }
                 Column(
-                    Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(12.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState())
+                        .padding(if (desktop) 20.dp else 12.dp),
+                    verticalArrangement = Arrangement.spacedBy(if (desktop) 12.dp else 8.dp),
                 ) {
                     DelayInformation(ui, onCursor, onOptions)
                 }
@@ -737,12 +929,24 @@ private fun HeaderControls(
     languageCode: String,
     onThemeChange: () -> Unit,
     onLanguageChange: (String) -> Unit,
+    compact: Boolean = true,
+    themeIconColor: Color = Color.White,
 ) {
     var expanded by remember { mutableStateOf(false) }
     Row(verticalAlignment = Alignment.CenterVertically) {
         Box {
-            IconButton(onClick = { expanded = true }, modifier = Modifier.width(38.dp)) {
-                Text(languageCode.uppercase(), style = MaterialTheme.typography.labelSmall)
+            if (compact) {
+                IconButton(onClick = { expanded = true }, modifier = Modifier.width(38.dp)) {
+                    Text(languageCode.uppercase(), style = MaterialTheme.typography.labelSmall)
+                }
+            } else {
+                TextButton(onClick = { expanded = true }) {
+                    Text(when (languageCode) {
+                        "de" -> "Deutsch"
+                        "fr" -> "Français"
+                        else -> "English"
+                    })
+                }
             }
             DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
                 listOf("en" to "English", "fr" to "Français", "de" to "Deutsch").forEach { (code, label) ->
@@ -758,23 +962,23 @@ private fun HeaderControls(
             onClick = onThemeChange,
             modifier = Modifier.width(38.dp).semantics { contentDescription = themeLabel },
         ) {
-            ThemeIcon(showSun = dark)
+            ThemeIcon(showSun = dark, ink = themeIconColor)
         }
     }
 }
 
 @Composable
-private fun ThemeIcon(showSun: Boolean) {
+private fun ThemeIcon(showSun: Boolean, ink: Color) {
     Canvas(Modifier.size(16.dp)) {
         val stroke = Stroke(1.4.dp.toPx())
         val radius = size.minDimension / 2
         if (showSun) {
-            drawCircle(Color.White, radius * .40f, style = stroke)
+            drawCircle(ink, radius * .40f, style = stroke)
             for (ray in 0 until 8) {
                 val angle = ray * kotlin.math.PI / 4
                 val direction = Offset(kotlin.math.cos(angle).toFloat(), kotlin.math.sin(angle).toFloat())
                 drawLine(
-                    Color.White,
+                    ink,
                     center + direction * (radius * .68f),
                     center + direction * (radius * .96f),
                     stroke.width,
@@ -789,7 +993,7 @@ private fun ThemeIcon(showSun: Boolean) {
                 cubicTo(size.width * .52f, size.height * .73f, size.width * .30f, size.height * .43f, size.width * .52f, size.height * .12f)
                 close()
             }
-            drawPath(moon, Color.White, style = stroke)
+            drawPath(moon, ink, style = stroke)
         }
     }
 }

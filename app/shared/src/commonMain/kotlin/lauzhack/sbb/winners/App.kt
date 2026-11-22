@@ -9,3 +9,8 @@ import lauzhack.sbb.winners.ui.SbbAssistScreen
 fun App() {
     SbbAssistScreen()
 }
+
+@Composable
+fun DesktopApp() {
+    SbbAssistScreen(desktop = true)
+}

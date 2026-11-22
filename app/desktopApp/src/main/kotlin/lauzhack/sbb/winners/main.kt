@@ -9,8 +9,8 @@ fun main() = application {
     Window(
         onCloseRequest = ::exitApplication,
         title = "KeepCalmAndMove",
-        state = rememberWindowState(width = 420.dp, height = 780.dp),
+        state = rememberWindowState(width = 1320.dp, height = 860.dp),
     ) {
-        App()
+        DesktopApp()
     }
 }

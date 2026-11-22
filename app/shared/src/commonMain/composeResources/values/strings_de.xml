@@ -85,4 +85,9 @@
     <string name="de_other_travel_options">Weitere Reisemöglichkeiten</string>
     <string name="de_train_fare_included">Im Zugbillett inbegriffen.</string>
     <string name="de_taxi_separate_cost">Taxikosten separat: CHF %1$s</string>
+    <string name="de_menu">Menü</string>
+    <string name="de_help_and_contact">Hilfe und Kontakt</string>
+    <string name="de_select_connection">Verbindung auswählen</string>
+    <string name="de_station_from">Von</string>
+    <string name="de_station_to">Nach</string>
 </resources>

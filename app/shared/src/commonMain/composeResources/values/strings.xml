@@ -85,4 +85,9 @@
     <string name="other_travel_options">Other ways to travel</string>
     <string name="train_fare_included">Included in the train fare.</string>
     <string name="taxi_separate_cost">Taxi fare (separate): CHF %1$s</string>
+    <string name="menu">Menu</string>
+    <string name="help_and_contact">Help and contact</string>
+    <string name="select_connection">Choose a connection</string>
+    <string name="station_from">From</string>
+    <string name="station_to">To</string>
 </resources>
