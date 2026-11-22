@@ -12,8 +12,19 @@ import lauzhack.sbb.winners.engine.ia.Recommandation
 import lauzhack.sbb.winners.model.Disruption
 import lauzhack.sbb.winners.model.Journey
 
+/** Un trajet de démo, relié à un incident RÉEL du jeu de données serveur. */
+data class TrajetDemo(
+    val incidentId: String,
+    val origin: String,
+    val destination: String,
+    val dureeMin: Long,
+) {
+    val label: String get() = "$origin → $destination"
+}
+
 /** État complet de l'écran d'assistance, calculé par le moteur à partir des données serveur. */
 data class AssistUiState(
+    val trajet: TrajetDemo = AssistViewModel.TRAJETS.first(),
     val chargement: Boolean = true,
     val erreur: String? = null,
     val timeline: List<Disruption> = emptyList(),
@@ -28,7 +39,7 @@ data class AssistUiState(
 /**
  * Relie le serveur de replay (A) au moteur de décision (B) pour l'interface (C).
  *
- * 1. [charger] récupère la timeline de l'incident une seule fois.
+ * 1. [charger] récupère la timeline de l'incident choisi une seule fois.
  * 2. [surCurseur] rejoue : pour un instant t, on prend le dernier snapshot connu (lastUpdateMillis <= t)
  *    et on rappelle `ConseillerVoyage.conseiller`. Pas de profil : le moteur utilise son profil neutre.
  *
@@ -44,15 +55,17 @@ class AssistViewModel(
 
     private var jobCalcul: Job? = null
 
-    /** Charge la timeline de l'incident principal (repli sur le premier incident de la liste). */
-    fun charger(incidentId: String = INCIDENT_PRINCIPAL) {
+    /** Charge la timeline du trajet choisi (incident réel associé). */
+    fun charger(trajet: TrajetDemo = TRAJETS.first()) {
+        _state.value = _state.value.copy(
+            trajet = trajet, chargement = true, erreur = null,
+            timeline = emptyList(), reco = null, curseurMillis = null,
+            minMillis = null, maxMillis = null, disruptionCourante = null,
+        )
         scope.launch {
             try {
-                val timeline = source.timeline(incidentId).ifEmpty {
-                    val premier = source.list().firstOrNull()
-                        ?: error("Aucun incident disponible sur le serveur.")
-                    source.timeline(premier.id)
-                }
+                val timeline = source.timeline(trajet.incidentId)
+                if (timeline.isEmpty()) error("Aucun snapshot pour cet incident.")
                 val min = timeline.minOf { it.lastUpdateMillis }
                 val max = timeline.maxOf { it.lastUpdateMillis }
                 _state.value = _state.value.copy(
@@ -74,7 +87,7 @@ class AssistViewModel(
         val timeline = _state.value.timeline
         if (timeline.isEmpty()) return
         val snapshot = timeline.lastOrNull { it.lastUpdateMillis <= t } ?: timeline.first()
-        val journey = trajetDemo(t)
+        val journey = trajetDemo(_state.value.trajet, t)
         _state.value = _state.value.copy(
             curseurMillis = t, disruptionCourante = snapshot, journey = journey,
         )
@@ -93,18 +106,23 @@ class AssistViewModel(
     }
 
     companion object {
-        /** Incident principal de la démo : Renens VD – Morges (panne de courant du 17.09.2026). */
-        const val INCIDENT_PRINCIPAL = "2195005188970"
-
         private const val MINUTE_MILLIS = 60_000L
-        private const val DUREE_TRAJET_MIN = 36L
 
-        /** Trajet de démo : Lausanne -> Genève, départ = instant du curseur, arrivée prévue = +36 min. */
-        fun trajetDemo(departMillis: Long): Journey = Journey(
-            origin = "Lausanne",
-            destination = "Genève",
+        /**
+         * Les trajets de démo, chacun relié à un incident RÉEL du jeu de données.
+         * On n'invente pas de trajet : seuls ces incidents existent dans les données.
+         */
+        val TRAJETS = listOf(
+            TrajetDemo("2195005188970", "Lausanne", "Genève", dureeMin = 36),
+            TrajetDemo("2195005182293", "Wädenswil", "Pfäffikon SZ", dureeMin = 12),
+        )
+
+        /** Trajet : départ = instant du curseur, arrivée prévue = départ + durée du trajet. */
+        fun trajetDemo(trajet: TrajetDemo, departMillis: Long): Journey = Journey(
+            origin = trajet.origin,
+            destination = trajet.destination,
             departureMillis = departMillis,
-            plannedArrivalMillis = departMillis + DUREE_TRAJET_MIN * MINUTE_MILLIS,
+            plannedArrivalMillis = departMillis + trajet.dureeMin * MINUTE_MILLIS,
         )
     }
 }

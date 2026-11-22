@@ -324,7 +324,12 @@ internal fun SbbAssistScreen(desktop: Boolean = false) {
                 }
 
                 // Outil de démo (hors application) : rejeu de l'incident réel pour le pitch.
-                DemoReplayOverlay(ui = ui, desktop = desktop, onCursor = viewModel::surCurseur)
+                DemoReplayOverlay(
+                    ui = ui,
+                    desktop = desktop,
+                    onCursor = viewModel::surCurseur,
+                    onSelectTrajet = viewModel::charger,
+                )
             }
         }
     }
@@ -1128,7 +1133,12 @@ private fun DelayInformation(ui: AssistUiState, onOptions: () -> Unit) {
  * Posé à droite sur Desktop, en bas sur mobile ; il pilote le même ViewModel que l'app.
  */
 @Composable
-private fun DemoReplayOverlay(ui: AssistUiState, desktop: Boolean, onCursor: (Long) -> Unit) {
+private fun DemoReplayOverlay(
+    ui: AssistUiState,
+    desktop: Boolean,
+    onCursor: (Long) -> Unit,
+    onSelectTrajet: (TrajetDemo) -> Unit,
+) {
     val min = ui.minMillis
     val max = ui.maxMillis
     val cursor = ui.curseurMillis
@@ -1160,8 +1170,29 @@ private fun DemoReplayOverlay(ui: AssistUiState, desktop: Boolean, onCursor: (Lo
                         color = HeaderRed,
                     )
                 }
+                // Pastilles : basculer entre les trajets (chacun = un incident RÉEL des données).
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    AssistViewModel.TRAJETS.forEach { trajet ->
+                        val selected = trajet.incidentId == ui.trajet.incidentId
+                        Surface(
+                            onClick = { if (!selected) onSelectTrajet(trajet) },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(8.dp),
+                            color = if (selected) HeaderRed else Color.Transparent,
+                            contentColor = Color.White,
+                            border = if (selected) null else BorderStroke(1.dp, borderColor),
+                        ) {
+                            Text(
+                                trajet.label,
+                                Modifier.padding(horizontal = 12.dp, vertical = 7.dp),
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
+                            )
+                        }
+                    }
+                }
                 Text(
-                    "Rejeu de l'incident réel — Renens VD, 17.09.2026. Outil de présentation, pas une fonction de l'app.",
+                    "Rejeu d'un incident réel (données SBB). Outil de présentation, pas une fonction de l'app.",
                     style = MaterialTheme.typography.bodySmall,
                     color = mutedText,
                 )
