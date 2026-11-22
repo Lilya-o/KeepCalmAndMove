@@ -4,7 +4,6 @@
     <string name="de_situation">Lage</string>
     <string name="de_options">Optionen</string>
     <string name="de_detail">Details zur Option</string>
-    <string name="de_demo">Demo · Zeit seit Beginn der Störung</string>
     <string name="de_back">Zurück</string>
     <string name="de_next">Weiter</string>
     <string name="de_route">%1$s → %2$s</string>
@@ -19,20 +18,19 @@
     <string name="de_confidence">Vertrauen in die Information: %1$d %</string>
     <string name="de_estimated_end">Voraussichtliches Ende bei +%1$d Min.</string>
     <string name="de_demo_message">Eingeschränkter Bahnverkehr zwischen Annemasse und Genf.</string>
-    <string name="de_demo_order">Die Reihenfolge ist in der Demo für alle Profile gleich.</string>
-    <string name="de_recommended">Empfehlung der Demo</string>
+    <string name="de_recommended">Empfehlung unseres Algorithmus</string>
     <string name="de_open_detail">Details ansehen</string>
     <string name="de_eta">Voraussichtliche Ankunft bei +%1$d Min.</string>
     <string name="de_eta_unknown">Voraussichtliche Ankunft unbekannt</string>
     <string name="de_cost">Geschätzte Kosten: CHF %1$s</string>
     <string name="de_refund_check">Erstattung noch zu klären</string>
     <string name="de_refund_none">Keine Angabe zur Erstattung</string>
-    <string name="de_steps_missing">Keine Anleitung in den Beispieldaten</string>
+    <string name="de_steps_missing">Keine Anleitung verfügbar</string>
     <string name="de_wait_title">Auf die Wiederaufnahme warten</string>
     <string name="de_wait_reason">Die Wiederaufnahme wird um %1$s erwartet.</string>
     <string name="de_taxi_title">Taxi nach %1$s</string>
     <string name="de_taxi_reason">Schnellere Ankunft. Erstattung noch zu klären.</string>
-    <string name="de_history_missing">Der Änderungsverlauf fehlt in den Beispieldaten.</string>
+    <string name="de_history_missing">Keine früheren Meldungen verfügbar.</string>
     <string name="de_information">Information</string>
     <string name="de_theme_light">Zum hellen Design wechseln</string>
     <string name="de_theme_dark">Zum dunklen Design wechseln</string>
@@ -43,8 +41,7 @@
     <string name="de_connection">Verbindung</string>
     <string name="de_delay">Verspätung</string>
     <string name="de_wait_delay">Beim Warten: +%1$d Min.</string>
-    <string name="de_demo_profile">Demoprofil</string>
-    <string name="de_demo_timetable">Demo-Fahrplan</string>
+    <string name="de_demo_timetable">Unverbindlicher Fahrplan</string>
     <string name="de_duration">%1$d Min.</string>
     <string name="de_towards">Richtung %1$s</string>
     <string name="de_departure_clock">%1$s · Abfahrt in %2$s</string>
@@ -55,10 +52,10 @@
     <string name="de_tickets">Billette</string>
     <string name="de_shop">Shop</string>
     <string name="de_swap_stations">Abfahrt und Ziel tauschen</string>
-    <string name="de_no_reverse_connections">Keine Demo-Verbindungen in dieser Richtung.</string>
+    <string name="de_no_reverse_connections">Keine Verbindungen in dieser Richtung verfügbar.</string>
     <string name="de_ticket_offers">Billettangebote</string>
     <string name="de_show_ticket_offers">Billettangebote anzeigen</string>
-    <string name="de_demo_offers">Beispielpreise · kein Kauf möglich</string>
+    <string name="de_demo_offers">Unverbindliche Preise · kein Kauf möglich</string>
     <string name="de_platform">Gleis %1$d</string>
     <string name="de_first_class">1. Klasse</string>
     <string name="de_second_class">2. Klasse</string>
@@ -66,7 +63,7 @@
     <string name="de_occupancy_low">Geringe bis mittlere Auslastung</string>
     <string name="de_occupancy_high">Hohe Auslastung</string>
     <string name="de_occupancy_very_high">Sehr hohe Auslastung</string>
-    <string name="de_demo_service_details">Demo · Gleise und Auslastung sind fiktiv.</string>
+    <string name="de_demo_service_details">Gleise und Auslastung vor der Abfahrt prüfen.</string>
     <string name="de_delay_if_waiting">Geschätzte Verspätung beim Warten</string>
     <string name="de_updated_at_clock">Aktualisiert um %1$s</string>
     <string name="de_estimated_arrival_clock">Voraussichtliche Ankunft: %1$s</string>
@@ -81,4 +78,11 @@
     <string name="de_visit_sbb">Zur SBB ↗</string>
     <string name="de_sbb_timetable_url">https://www.sbb.ch/de/hilfe-und-kontakt/produkte-services/fahrplan.html</string>
     <string name="de_sbb_passenger_rights_url">https://www.sbb.ch/de/hilfe-und-kontakt/erstattung-entschaedigung/rueckerstattung/entschaedigung-bei-verspaetung.html</string>
+    <string name="de_hotel_option">Hotel</string>
+    <string name="de_hotel_condition">Eine Hotelunterbringung kann möglich sein, wenn Sie wegen einer Verspätung oder eines Ausfalls die letzte Verbindung des Tages verpassen und Ihr Ziel nicht mehr am selben Tag erreichen. Klären Sie Ihren Anspruch mit dem Bahnpersonal.</string>
+    <string name="de_train_to">%1$s Richtung %2$s</string>
+    <string name="de_earliest_train">Früheste voraussichtliche Ankunft mit dem Zug.</string>
+    <string name="de_other_travel_options">Weitere Reisemöglichkeiten</string>
+    <string name="de_train_fare_included">Im Zugbillett inbegriffen.</string>
+    <string name="de_taxi_separate_cost">Taxikosten separat: CHF %1$s</string>
 </resources>

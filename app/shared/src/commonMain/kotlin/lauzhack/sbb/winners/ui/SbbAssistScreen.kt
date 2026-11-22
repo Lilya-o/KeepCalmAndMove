@@ -149,6 +149,34 @@ private val demoConnections = listOf(
     DemoConnection("RL4", 9 * 60L + 40, 10 * 60L + 5),
 )
 
+private sealed interface TravelChoice {
+    val arrivalMinute: Long?
+
+    data class Connection(val train: DemoConnection) : TravelChoice {
+        override val arrivalMinute = train.arrivalMinute
+    }
+
+    data class Assistance(val option: Option) : TravelChoice {
+        override val arrivalMinute = option.etaMillis?.let { DEMO_START_MINUTE + elapsedMinutes(it) }
+    }
+}
+
+private val trainChoices = run {
+    val updatedAt = DEMO_START_MINUTE + elapsedMinutes(SampleData.disruption.lastUpdateMillis)
+    val connections = demoConnections
+        .filter { !it.delayed && it.departureMinute >= updatedAt }
+        .map(TravelChoice::Connection)
+    val railOptions = SampleData.options
+        .filter { it.type == OptionType.WAIT || it.type == OptionType.ALTERNATIVE_ROUTE }
+        .map(TravelChoice::Assistance)
+    (connections + railOptions).sortedBy { it.arrivalMinute ?: Long.MAX_VALUE }
+}
+
+private val otherChoices = SampleData.options
+    .filterNot { it.type == OptionType.WAIT || it.type == OptionType.ALTERNATIVE_ROUTE }
+    .map(TravelChoice::Assistance)
+private val allChoices = trainChoices + otherChoices
+
 private fun clockTime(minute: Long): String =
     (minute / 60).toString().padStart(2, '0') + ":" + (minute % 60).toString().padStart(2, '0')
 
@@ -227,7 +255,7 @@ internal fun SbbAssistScreen() {
                                             optionIndex = index
                                             screen = Screen.DETAIL
                                         }
-                                        Screen.DETAIL -> Panel { OptionDetail(SampleData.options[optionIndex]) }
+                                        Screen.DETAIL -> Panel { TravelChoiceDetail(allChoices[optionIndex]) }
                                         Screen.OFFERS -> TicketOffers(demoConnections[connectionIndex])
                                         Screen.TRIPS, Screen.EASY_RIDE, Screen.TICKETS, Screen.SHOP -> Unit
                                         Screen.PROFILE -> DemoProfile()
@@ -689,7 +717,6 @@ private fun DemoProfile() {
             }
             Column(Modifier.weight(1f)) {
                 Text("Camille Morel", style = MaterialTheme.typography.titleLarge)
-                Text(textResource(Res.string.demo_profile))
             }
         }
     }
@@ -911,9 +938,11 @@ private fun Panel(onClick: (() -> Unit)? = null, content: @Composable () -> Unit
 
 @Composable
 private fun Options(onSelect: (Int) -> Unit) {
-    Text(textResource(Res.string.demo_order))
-    SampleData.options.forEachIndexed { index, option ->
-        val recommended = index == 0
+    allChoices.forEachIndexed { index, choice ->
+        if (index == trainChoices.size) {
+            Text(textResource(Res.string.other_travel_options), style = MaterialTheme.typography.titleMedium)
+        }
+        val recommended = index == 0 && trainChoices.firstOrNull()?.arrivalMinute != null
         Card(
             onClick = { onSelect(index) },
             modifier = Modifier.fillMaxWidth(),
@@ -928,11 +957,47 @@ private fun Options(onSelect: (Int) -> Unit) {
         ) {
             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 if (recommended) Text(textResource(Res.string.recommended), style = MaterialTheme.typography.labelLarge)
-                Text(optionTitle(option), style = MaterialTheme.typography.titleLarge)
-                if (recommended) Text(optionReason(option))
+                Text(choiceTitle(choice), style = MaterialTheme.typography.titleLarge)
+                ChoiceArrival(choice)
                 Text(textResource(Res.string.open_detail), style = MaterialTheme.typography.labelLarge)
             }
         }
+    }
+    Panel {
+        FaqEntry(
+            textResource(Res.string.hotel_option),
+            textResource(Res.string.hotel_condition),
+            textResource(Res.string.sbb_passenger_rights_url) + "#anchor3",
+        )
+    }
+}
+
+@Composable
+private fun choiceTitle(choice: TravelChoice): String = when (choice) {
+    is TravelChoice.Connection -> textResource(Res.string.train_to, choice.train.line, SampleData.journey.destination)
+    is TravelChoice.Assistance -> optionTitle(choice.option)
+}
+
+@Composable
+private fun ChoiceArrival(choice: TravelChoice) {
+    val arrival = choice.arrivalMinute
+    Text(
+        if (arrival == null) textResource(Res.string.eta_unknown)
+        else textResource(Res.string.estimated_arrival_clock, clockTime(arrival)),
+        style = MaterialTheme.typography.bodyMedium,
+    )
+}
+
+@Composable
+private fun TravelChoiceDetail(choice: TravelChoice) {
+    when (choice) {
+        is TravelChoice.Connection -> {
+            Text(choiceTitle(choice), style = MaterialTheme.typography.titleLarge)
+            JourneyTimeline(choice.train)
+            Text(textResource(Res.string.train_fare_included))
+            Text(textResource(Res.string.demo_timetable), style = MaterialTheme.typography.bodySmall)
+        }
+        is TravelChoice.Assistance -> OptionDetail(choice.option)
     }
 }
 
@@ -943,7 +1008,11 @@ private fun OptionDetail(option: Option) {
     val eta = option.etaMillis
     Text(if (eta == null) textResource(Res.string.eta_unknown)
         else textResource(Res.string.estimated_arrival_clock, clockTime(DEMO_START_MINUTE + elapsedMinutes(eta))))
-    Text(textResource(Res.string.cost, option.costToTravellerChf.toString()))
+    if (option.type == OptionType.TAXI) {
+        Text(textResource(Res.string.taxi_separate_cost, option.costToTravellerChf.toString()))
+    } else {
+        Text(textResource(Res.string.cost, option.costToTravellerChf.toString()))
+    }
     Text(textResource(if (option.reimbursable) Res.string.refund_check else Res.string.refund_none))
     Text(textResource(Res.string.steps_missing))
 }
