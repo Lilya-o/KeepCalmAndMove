@@ -55,6 +55,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.runtime.getValue
@@ -162,6 +163,24 @@ private val demoConnections = listOf(
     DemoConnection("RL4", 18 * 60L + 50, 19 * 60L + 18),
 )
 
+/** Construit la liste de correspondances affichées à partir du trajet sélectionné. */
+private fun connexionsDe(trajet: TrajetDemo): List<DemoConnection> =
+    trajet.connexions.map {
+        DemoConnection(
+            line = it.line,
+            departureMinute = it.depMin.toLong(),
+            arrivalMinute = it.arrMin.toLong(),
+            delayed = it.delayed,
+            departurePlatform = if (it.delayed) 2 else 1,
+            arrivalPlatform = if (it.delayed) 4 else 3,
+            secondClassOccupancy = if (it.delayed) Occupancy.VERY_HIGH else Occupancy.HIGH,
+        )
+    }
+
+/** Trajet courant + ses correspondances, fournis en haut de l'arbre et lus par les écrans. */
+private val LocalTrajet = compositionLocalOf { AssistViewModel.TRAJETS.first() }
+private val LocalConnexions = compositionLocalOf { connexionsDe(AssistViewModel.TRAJETS.first()) }
+
 private sealed interface TravelChoice {
     val arrivalMinute: Long?
 
@@ -218,7 +237,11 @@ internal fun SbbAssistScreen(desktop: Boolean = false) {
     val ui by viewModel.state.collectAsState()
     LaunchedEffect(Unit) { viewModel.charger() }
 
-    CompositionLocalProvider(LocalLanguage provides languageCode) {
+    CompositionLocalProvider(
+        LocalLanguage provides languageCode,
+        LocalTrajet provides ui.trajet,
+        LocalConnexions provides connexionsDe(ui.trajet),
+    ) {
         val colors = if (dark) DarkRailColors else LightRailColors
         MaterialTheme(colorScheme = colors) {
             Surface(Modifier.fillMaxSize(), color = if (desktop) colors.background else colors.outlineVariant) {
@@ -243,7 +266,7 @@ internal fun SbbAssistScreen(desktop: Boolean = false) {
                                 screen = Screen.SITUATION
                             }
                             Screen.SITUATION -> JourneyDetail(
-                                connection = demoConnections[connectionIndex],
+                                connection = LocalConnexions.current[connectionIndex.coerceIn(0, LocalConnexions.current.lastIndex)],
                                 onDelay = { showInformation = true },
                                 onOffers = { screen = Screen.OFFERS },
                             )
@@ -259,7 +282,7 @@ internal fun SbbAssistScreen(desktop: Boolean = false) {
                                     TravelChoiceDetail(allChoices[optionIndex])
                                 }
                             }
-                            Screen.OFFERS -> TicketOffers(demoConnections[connectionIndex])
+                            Screen.OFFERS -> TicketOffers(LocalConnexions.current[connectionIndex.coerceIn(0, LocalConnexions.current.lastIndex)])
                             Screen.TRIPS, Screen.EASY_RIDE, Screen.TICKETS, Screen.SHOP -> Unit
                             Screen.PROFILE -> DemoProfile()
                         }
@@ -531,13 +554,13 @@ private fun SbbMark(modifier: Modifier = Modifier) {
 
 @Composable
 private fun JourneyList(reversed: Boolean, onSwap: () -> Unit, desktop: Boolean, onOpen: (Int) -> Unit) {
-    val journey = SampleData.journey
-    val origin = if (reversed) journey.destination else journey.origin
-    val destination = if (reversed) journey.origin else journey.destination
+    val trajet = LocalTrajet.current
+    val origin = if (reversed) trajet.destination else trajet.origin
+    val destination = if (reversed) trajet.origin else trajet.destination
     val ink = MaterialTheme.colorScheme.onSurface
     val border = MaterialTheme.colorScheme.outlineVariant
     if (!reversed) {
-        // Carte d'intro « Votre voyage » : une touche stylée qui décrit le trajet Lausanne -> Genève.
+        // Carte d'intro « Votre voyage » : décrit le trajet sélectionné.
         Panel {
             Text(
                 textResource(Res.string.your_trip).uppercase(),
@@ -551,7 +574,7 @@ private fun JourneyList(reversed: Boolean, onSwap: () -> Unit, desktop: Boolean,
                 fontWeight = FontWeight.Bold,
             )
             Text(
-                textResource(Res.string.trip_tagline),
+                trajet.tagline,
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -621,7 +644,7 @@ private fun JourneyList(reversed: Boolean, onSwap: () -> Unit, desktop: Boolean,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         modifier = Modifier.padding(horizontal = 4.dp, vertical = 3.dp),
     )
-    demoConnections.forEachIndexed { index, connection ->
+    LocalConnexions.current.forEachIndexed { index, connection ->
         Panel(onClick = { onOpen(index) }) {
             ConnectionHeading(connection)
             JourneyTimeline(connection)
@@ -674,7 +697,7 @@ private fun ConnectionHeading(connection: DemoConnection) {
             )
         }
         Text(
-            textResource(Res.string.towards, SampleData.journey.destination),
+            textResource(Res.string.towards, LocalTrajet.current.destination),
             Modifier.weight(1f),
             style = MaterialTheme.typography.bodyMedium,
         )
@@ -683,7 +706,7 @@ private fun ConnectionHeading(connection: DemoConnection) {
 
 @Composable
 private fun JourneyDetail(connection: DemoConnection, onDelay: () -> Unit, onOffers: () -> Unit) {
-    val journey = SampleData.journey
+    val journey = LocalTrajet.current
     val colors = MaterialTheme.colorScheme
     Panel {
         Text(
@@ -755,7 +778,7 @@ private fun JourneyDetail(connection: DemoConnection, onDelay: () -> Unit, onOff
 
 @Composable
 private fun TicketOffers(connection: DemoConnection) {
-    val journey = SampleData.journey
+    val journey = LocalTrajet.current
     Panel {
         Text(textResource(Res.string.route, journey.origin, journey.destination), style = MaterialTheme.typography.titleLarge)
         ConnectionHeading(connection)
@@ -802,7 +825,7 @@ private fun ClassOccupancy(label: StringResource, occupancy: Occupancy) {
 
 @Composable
 private fun StopsTimeline(connection: DemoConnection) {
-    val journey = SampleData.journey
+    val journey = LocalTrajet.current
     val ink = MaterialTheme.colorScheme.onSurface
     val railOffset = 56.dp
     Box(Modifier.fillMaxWidth()) {
