@@ -1,5 +1,10 @@
 package lauzhack.sbb.winners.ui
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.border
@@ -83,6 +88,7 @@ import androidx.compose.ui.unit.dp
 import keepcalmandmove.app.shared.generated.resources.*
 import lauzhack.sbb.winners.model.Option
 import lauzhack.sbb.winners.model.OptionType
+import kotlinx.coroutines.delay
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 import kotlinx.coroutines.launch
@@ -237,6 +243,22 @@ internal fun SbbAssistScreen(desktop: Boolean = false) {
     val ui by viewModel.state.collectAsState()
     LaunchedEffect(Unit) { viewModel.charger() }
 
+    // Bannière « urgente » : apparaît quand le TYPE de l'option recommandée change (ex. attendre -> bus).
+    var banniere by remember { mutableStateOf<String?>(null) }
+    val texteBanniere = remember { mutableStateOf("") }
+    var typePrecedent by remember { mutableStateOf<OptionType?>(null) }
+    val typeReco = ui.reco?.recommandee?.type
+    LaunchedEffect(typeReco) {
+        val avant = typePrecedent
+        typePrecedent = typeReco
+        if (typeReco != null && avant != null && typeReco != avant) {
+            texteBanniere.value = ui.reco?.recommandee?.title ?: ""
+            banniere = texteBanniere.value
+            delay(4500)
+            banniere = null
+        }
+    }
+
     CompositionLocalProvider(
         LocalLanguage provides languageCode,
         LocalTrajet provides ui.trajet,
@@ -353,6 +375,17 @@ internal fun SbbAssistScreen(desktop: Boolean = false) {
                     onCursor = viewModel::surCurseur,
                     onSelectTrajet = viewModel::charger,
                 )
+
+                // Notification « urgente » quand la recommandation change.
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
+                    AnimatedVisibility(
+                        visible = banniere != null,
+                        enter = slideInVertically { -it } + fadeIn(),
+                        exit = slideOutVertically { -it } + fadeOut(),
+                    ) {
+                        RecoChangeBanner(texteBanniere.value) { banniere = null }
+                    }
+                }
             }
         }
     }
@@ -1308,6 +1341,39 @@ private fun DemoReplayOverlay(
                         }
                     }
                 }
+            }
+        }
+    }
+}
+
+/** Bannière rouge type notification, qui glisse depuis le haut quand la reco change. */
+@Composable
+private fun RecoChangeBanner(titre: String, onDismiss: () -> Unit) {
+    Surface(
+        onClick = onDismiss,
+        modifier = Modifier
+            .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Top))
+            .padding(12.dp)
+            .widthIn(max = 440.dp)
+            .fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        color = HeaderRed,
+        contentColor = Color.White,
+        shadowElevation = 10.dp,
+    ) {
+        Row(
+            Modifier.padding(14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Text("🔔", style = MaterialTheme.typography.titleLarge)
+            Column(Modifier.weight(1f)) {
+                Text(
+                    "La recommandation a changé",
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.Bold,
+                )
+                Text(titre, style = MaterialTheme.typography.bodyMedium)
             }
         }
     }
