@@ -93,11 +93,20 @@
     <string name="fr_your_trip">Votre voyage</string>
     <string name="fr_trip_tagline">De la capitale olympique à la cité au bord du Léman — environ 36 min quand tout roule normalement.</string>
     <string name="fr_listen_recommendation">Écouter</string>
-    <string name="fr_advice_in_french">Le conseil de voyage est en français.</string>
     <string name="fr_train_tonight_probability">Probabilité qu’un train circule ce soir : %1$d %</string>
     <string name="fr_recommendation_unavailable">La recommandation de voyage est momentanément indisponible.</string>
     <string name="fr_recommendation_loading">Chargement de la recommandation de voyage…</string>
     <string name="fr_alternative_route">Itinéraire alternatif</string>
     <string name="fr_taxi_option">Taxi</string>
     <string name="fr_compensation_option">Indemnisation</string>
+    <string name="fr_travel_advice">Conseil de voyage</string>
+    <string name="fr_advice_alternative">Prenez la correspondance alternative proposée.</string>
+    <string name="fr_advice_wait">Attendez la reprise du trafic et consultez les mises à jour avant de poursuivre.</string>
+    <string name="fr_advice_train_resumed">Le trafic a repris. Prenez votre train comme prévu.</string>
+    <string name="fr_advice_taxi">Envisagez un taxi et vérifiez le tarif avant de partir.</string>
+    <string name="fr_advice_hotel">Renseignez-vous auprès du personnel ferroviaire sur la possibilité de passer la nuit à l’hôtel et de prendre le premier train.</string>
+    <string name="fr_advice_compensation">Vérifiez si vous avez droit à une indemnisation.</string>
+    <string name="fr_advice_check_updates">Consultez les dernières informations avant de poursuivre votre trajet.</string>
+    <string name="fr_advice_arrival">Arrivée estimée à %1$s.</string>
+    <string name="fr_advice_arrival_tomorrow">Arrivée estimée demain à %1$s.</string>
 </resources>

@@ -92,12 +92,21 @@
     <string name="de_station_to">Nach</string>
     <string name="de_your_trip">Ihre Reise</string>
     <string name="de_trip_tagline">Von der olympischen Hauptstadt zur Stadt am Genfersee — rund 36 Min. bei normalem Betrieb.</string>
-    <string name="de_listen_recommendation">Auf Französisch anhören</string>
-    <string name="de_advice_in_french">Die Reiseempfehlung ist auf Französisch.</string>
+    <string name="de_listen_recommendation">Anhören</string>
     <string name="de_train_tonight_probability">Wahrscheinlichkeit, dass heute Abend ein Zug fährt: %1$d %</string>
     <string name="de_recommendation_unavailable">Die Reiseempfehlung ist derzeit nicht verfügbar.</string>
     <string name="de_recommendation_loading">Reiseempfehlung wird geladen…</string>
     <string name="de_alternative_route">Alternative Route</string>
     <string name="de_taxi_option">Taxi</string>
     <string name="de_compensation_option">Entschädigung</string>
+    <string name="de_travel_advice">Reiseempfehlung</string>
+    <string name="de_advice_alternative">Nehmen Sie die vorgeschlagene Ersatzverbindung.</string>
+    <string name="de_advice_wait">Warten Sie auf die Wiederaufnahme des Verkehrs und prüfen Sie vor der Weiterfahrt die aktuellen Meldungen.</string>
+    <string name="de_advice_train_resumed">Der Verkehr wurde wieder aufgenommen. Nehmen Sie Ihren Zug wie geplant.</string>
+    <string name="de_advice_taxi">Ziehen Sie ein Taxi in Betracht und prüfen Sie vor der Abfahrt den Preis.</string>
+    <string name="de_advice_hotel">Fragen Sie beim Bahnpersonal nach einer Übernachtung und der Weiterfahrt mit dem ersten Zug.</string>
+    <string name="de_advice_compensation">Prüfen Sie, ob Sie Anspruch auf eine Entschädigung haben.</string>
+    <string name="de_advice_check_updates">Prüfen Sie vor der Weiterfahrt die aktuellen Meldungen.</string>
+    <string name="de_advice_arrival">Voraussichtliche Ankunft um %1$s Uhr.</string>
+    <string name="de_advice_arrival_tomorrow">Voraussichtliche Ankunft morgen um %1$s Uhr.</string>
 </resources>

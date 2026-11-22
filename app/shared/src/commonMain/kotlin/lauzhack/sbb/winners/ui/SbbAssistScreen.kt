@@ -1162,14 +1162,18 @@ private fun DelayInformation(ui: AssistUiState, onCursor: (Long) -> Unit, onOpti
             )
         }
         else -> {
-            // Bandeau : titre + conseil du moteur (textes en français fournis par B).
             Panel {
-                Text(reco.titre, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-                Text(reco.conseil, style = MaterialTheme.typography.bodyMedium)
-                if (LocalLanguage.current != "fr") {
-                    Text(textResource(Res.string.advice_in_french), style = MaterialTheme.typography.bodySmall)
+                val language = LocalLanguage.current
+                val title = if (language == "fr") reco.titre else textResource(Res.string.travel_advice)
+                val advice = if (language == "fr") reco.conseil else LocalizedTravelAdvice(ui)
+                val voiceLanguage = when (language) {
+                    "de" -> "de-DE"
+                    "en" -> "en-US"
+                    else -> "fr-FR"
                 }
-                BoutonEcouter(reco.titre, reco.conseil, textResource(Res.string.listen_recommendation))
+                Text(title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                Text(advice, style = MaterialTheme.typography.bodyMedium)
+                BoutonEcouter(title, advice, textResource(Res.string.listen_recommendation), voiceLanguage)
                 HorizontalDivider()
                 ui.journey?.let { journey ->
                     reco.retardSiAttenteMinutes(journey)?.let { retard ->
@@ -1240,6 +1244,32 @@ private fun DelayInformation(ui: AssistUiState, onCursor: (Long) -> Unit, onOpti
         }
     }
     TimelineCaption()
+}
+
+@Composable
+private fun LocalizedTravelAdvice(ui: AssistUiState): String {
+    val recommendation = ui.reco ?: return textResource(Res.string.recommendation_unavailable)
+    val option = recommendation.recommandee
+    val action = textResource(
+        when (option?.type) {
+            OptionType.ALTERNATIVE_ROUTE -> Res.string.advice_alternative
+            OptionType.WAIT -> if (recommendation.faits.resolue) Res.string.advice_train_resumed else Res.string.advice_wait
+            OptionType.TAXI -> Res.string.advice_taxi
+            OptionType.HOTEL -> Res.string.advice_hotel
+            OptionType.REFUND -> Res.string.advice_compensation
+            null -> Res.string.advice_check_updates
+        },
+    )
+    val arrival = option?.etaMillis ?: return action
+    val now = ui.curseurMillis ?: ui.journey?.departureMillis
+    val tomorrow = now != null &&
+        (arrival + SUISSE_ETE_MILLIS).floorDiv(86_400_000L) ==
+        (now + SUISSE_ETE_MILLIS).floorDiv(86_400_000L) + 1
+    val arrivalText = textResource(
+        if (tomorrow) Res.string.advice_arrival_tomorrow else Res.string.advice_arrival,
+        clockFromMillis(arrival),
+    )
+    return "$action $arrivalText"
 }
 
 /**

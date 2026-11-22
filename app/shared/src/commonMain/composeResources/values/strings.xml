@@ -92,12 +92,21 @@
     <string name="station_to">To</string>
     <string name="your_trip">Your trip</string>
     <string name="trip_tagline">From the Olympic Capital to the city on Lake Geneva — about 36 min when everything runs normally.</string>
-    <string name="listen_recommendation">Listen in French</string>
-    <string name="advice_in_french">The travel advice is in French.</string>
+    <string name="listen_recommendation">Listen</string>
     <string name="train_tonight_probability">Chance of a train running this evening: %1$d%</string>
     <string name="recommendation_unavailable">The travel recommendation is currently unavailable.</string>
     <string name="recommendation_loading">Loading travel recommendation…</string>
     <string name="alternative_route">Alternative route</string>
     <string name="taxi_option">Taxi</string>
     <string name="compensation_option">Compensation</string>
+    <string name="travel_advice">Travel advice</string>
+    <string name="advice_alternative">Take the suggested alternative connection.</string>
+    <string name="advice_wait">Wait for services to resume and check for updates before continuing.</string>
+    <string name="advice_train_resumed">Services have resumed. Take your train as planned.</string>
+    <string name="advice_taxi">Consider taking a taxi and check the fare before you leave.</string>
+    <string name="advice_hotel">Ask railway staff about staying overnight and taking the first train.</string>
+    <string name="advice_compensation">Check whether you are eligible for compensation.</string>
+    <string name="advice_check_updates">Check the latest travel updates before continuing.</string>
+    <string name="advice_arrival">Estimated arrival at %1$s.</string>
+    <string name="advice_arrival_tomorrow">Estimated arrival tomorrow at %1$s.</string>
 </resources>
