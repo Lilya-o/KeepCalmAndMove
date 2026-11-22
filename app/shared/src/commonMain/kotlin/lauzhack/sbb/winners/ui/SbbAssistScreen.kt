@@ -369,16 +369,16 @@ internal fun SbbAssistScreen(desktop: Boolean = false) {
                             screen = Screen.OPTIONS
                         },
                     )
-                } else {
+                } else if (desktop) {
                     Box(
                         Modifier.fillMaxSize().padding(16.dp),
-                        contentAlignment = if (desktop) Alignment.CenterEnd else Alignment.BottomCenter,
+                        contentAlignment = Alignment.CenterEnd,
                     ) {
                         DemoReplayPanel(
                             ui = ui,
                             onCursor = viewModel::surCurseur,
                             onSelectTrajet = viewModel::charger,
-                            modifier = Modifier.widthIn(max = 360.dp).fillMaxWidth(if (desktop) 1f else .96f),
+                            modifier = Modifier.widthIn(max = 360.dp).fillMaxWidth(),
                         )
                     }
                 }
@@ -970,11 +970,13 @@ private fun DelayDialog(
 ) {
     Dialog(onDismissRequest = onClose, properties = DialogProperties(usePlatformDefaultWidth = false)) {
         BoxWithConstraints(
-            Modifier.widthIn(max = if (desktop) 1080.dp else 420.dp)
+            Modifier.widthIn(max = if (desktop) 1080.dp else 400.dp)
                 .fillMaxWidth(.96f)
                 .fillMaxHeight(.92f),
         ) {
-            if (desktop && maxWidth >= 760.dp) {
+            if (!desktop) {
+                DelayDialogCard(ui, desktop, onClose, onOptions, Modifier.fillMaxSize())
+            } else if (maxWidth >= 760.dp) {
                 val replayHeight = maxHeight
                 Row(
                     Modifier.fillMaxSize(),
@@ -1268,7 +1270,7 @@ private fun LocalizedTravelAdvice(ui: AssistUiState): String {
  * Panneau de DÉMO, volontairement à l'écart de l'application (fond sombre, badge « MODE DÉMO »).
  * Ce n'est pas une fonctionnalité pour le voyageur : c'est l'outil du pitch pour rejouer l'incident
  * réel minute par minute et montrer comment la situation (et la reco du moteur) évoluent.
- * Posé à droite sur Desktop, en bas sur mobile ; il pilote le même ViewModel que l'app.
+ * Affiché sur Desktop ; il pilote le même ViewModel que l'app.
  */
 @Composable
 private fun DemoReplayPanel(

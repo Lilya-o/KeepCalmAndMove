@@ -40,7 +40,7 @@ if "$ADB" devices | grep -qw "device"; then
 else
   AVD=$("$EMU" -list-avds 2>/dev/null | head -1 || true)
   [ -n "$AVD" ] || { echo "✗ Aucun AVD. Crée un émulateur dans Android Studio (Device Manager)."; exit 1; }
-  echo "▶ Démarrage de l'émulateur : $AVD… (logs: /tmp/kcm-emulator.log)"
+  echo "▶ Démarrage de l'émulateur : ${AVD}… (logs: /tmp/kcm-emulator.log)"
   "$EMU" -avd "$AVD" > /tmp/kcm-emulator.log 2>&1 &
 fi
 
