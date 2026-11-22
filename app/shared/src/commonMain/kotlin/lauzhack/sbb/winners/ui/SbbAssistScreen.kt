@@ -144,9 +144,11 @@ private enum class Occupancy(val label: StringResource) {
     VERY_HIGH(Res.string.occupancy_very_high),
 }
 
-private const val DEMO_START_MINUTE = 9 * 60L
+// Horloge de démo calée sur la soirée de l'incident réel (17:52 -> 00:00), pour rester cohérent
+// avec le curseur de replay. Le train de la voyageuse (RE33) est prévu vers 18:10.
+private const val DEMO_START_MINUTE = 18 * 60L
 private val demoConnections = listOf(
-    DemoConnection("RL1", 8 * 60L + 52, 9 * 60L + 17),
+    DemoConnection("RL1", 18 * 60L + 20, 18 * 60L + 48),
     DemoConnection(
         line = "RE33",
         departureMinute = DEMO_START_MINUTE + elapsedMinutes(SampleData.journey.departureMillis),
@@ -156,8 +158,8 @@ private val demoConnections = listOf(
         arrivalPlatform = 4,
         secondClassOccupancy = Occupancy.VERY_HIGH,
     ),
-    DemoConnection("RL3", 9 * 60L + 25, 9 * 60L + 52),
-    DemoConnection("RL4", 9 * 60L + 40, 10 * 60L + 5),
+    DemoConnection("RL3", 18 * 60L + 35, 19 * 60L + 2),
+    DemoConnection("RL4", 18 * 60L + 50, 19 * 60L + 18),
 )
 
 private sealed interface TravelChoice {
@@ -245,11 +247,18 @@ internal fun SbbAssistScreen(desktop: Boolean = false) {
                                 onDelay = { showInformation = true },
                                 onOffers = { screen = Screen.OFFERS },
                             )
-                            Screen.OPTIONS -> Options { index ->
+                            Screen.OPTIONS -> Options(ui) { index ->
                                 optionIndex = index
                                 screen = Screen.DETAIL
                             }
-                            Screen.DETAIL -> Panel { TravelChoiceDetail(allChoices[optionIndex]) }
+                            Screen.DETAIL -> Panel {
+                                val reco = ui.reco
+                                if (reco != null) {
+                                    reco.options.getOrNull(optionIndex)?.let { EngineOptionDetail(it) }
+                                } else {
+                                    TravelChoiceDetail(allChoices[optionIndex])
+                                }
+                            }
                             Screen.OFFERS -> TicketOffers(demoConnections[connectionIndex])
                             Screen.TRIPS, Screen.EASY_RIDE, Screen.TICKETS, Screen.SHOP -> Unit
                             Screen.PROFILE -> DemoProfile()
@@ -1254,7 +1263,50 @@ private fun Panel(onClick: (() -> Unit)? = null, content: @Composable () -> Unit
 }
 
 @Composable
-private fun Options(onSelect: (Int) -> Unit) {
+private fun Options(ui: AssistUiState, onSelect: (Int) -> Unit) {
+    val reco = ui.reco
+    if (reco != null) {
+        // Options réelles classées par le moteur (cohérentes avec le panneau et la fenêtre Informations).
+        reco.options.forEachIndexed { index, option ->
+            val recommended = index == 0
+            Card(
+                onClick = { onSelect(index) },
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                colors = CardDefaults.cardColors(
+                    containerColor = if (recommended) MaterialTheme.colorScheme.primaryContainer
+                    else MaterialTheme.colorScheme.surface,
+                    contentColor = if (recommended) MaterialTheme.colorScheme.onPrimaryContainer
+                    else MaterialTheme.colorScheme.onSurface,
+                ),
+            ) {
+                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    if (recommended) Text(textResource(Res.string.recommended), style = MaterialTheme.typography.labelLarge)
+                    Text(option.title, style = MaterialTheme.typography.titleLarge)
+                    option.etaMillis?.let {
+                        Text(
+                            textResource(Res.string.estimated_arrival_clock, clockFromMillis(it)),
+                            style = MaterialTheme.typography.bodyMedium,
+                        )
+                    }
+                    if (recommended) {
+                        Text(option.explanation, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    Text(textResource(Res.string.open_detail), style = MaterialTheme.typography.labelLarge)
+                }
+            }
+        }
+        Panel {
+            FaqEntry(
+                textResource(Res.string.hotel_option),
+                textResource(Res.string.hotel_condition),
+                textResource(Res.string.sbb_passenger_rights_url) + "#anchor3",
+            )
+        }
+        return
+    }
+    // Repli (serveur indisponible) : liste de démo de C.
     allChoices.forEachIndexed { index, choice ->
         if (index == trainChoices.size) {
             Text(textResource(Res.string.other_travel_options), style = MaterialTheme.typography.titleMedium)
@@ -1332,6 +1384,24 @@ private fun OptionDetail(option: Option) {
     }
     Text(textResource(if (option.reimbursable) Res.string.refund_check else Res.string.refund_none))
     Text(textResource(Res.string.steps_missing))
+}
+
+/** Détail d'une option produite par le moteur (heures réelles via clockFromMillis). */
+@Composable
+private fun EngineOptionDetail(option: Option) {
+    Text(option.title, style = MaterialTheme.typography.titleLarge)
+    Text(option.explanation)
+    val eta = option.etaMillis
+    Text(
+        if (eta == null) textResource(Res.string.eta_unknown)
+        else textResource(Res.string.estimated_arrival_clock, clockFromMillis(eta)),
+    )
+    if (option.type == OptionType.TAXI) {
+        Text(textResource(Res.string.taxi_separate_cost, option.costToTravellerChf.toString()))
+    } else {
+        Text(textResource(Res.string.cost, option.costToTravellerChf.toString()))
+    }
+    Text(textResource(if (option.reimbursable) Res.string.refund_check else Res.string.refund_none))
 }
 
 @Composable
