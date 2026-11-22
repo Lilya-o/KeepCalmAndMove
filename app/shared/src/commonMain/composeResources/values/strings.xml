@@ -4,7 +4,6 @@
     <string name="situation">Situation</string>
     <string name="options">Options</string>
     <string name="detail">Option details</string>
-    <string name="demo">Demo · times measured from the start of the incident</string>
     <string name="back">Back</string>
     <string name="next">Continue</string>
     <string name="route">%1$s → %2$s</string>
@@ -19,20 +18,19 @@
     <string name="confidence">Information confidence: %1$d%</string>
     <string name="estimated_end">Estimated end at +%1$d min</string>
     <string name="demo_message">Limited rail service between Annemasse and Geneva.</string>
-    <string name="demo_order">The demo uses the same option order for every profile.</string>
-    <string name="recommended">Demo recommendation</string>
+    <string name="recommended">Our algorithm’s recommendation</string>
     <string name="open_detail">View details</string>
     <string name="eta">Estimated arrival at +%1$d min</string>
     <string name="eta_unknown">Estimated arrival unavailable</string>
     <string name="cost">Estimated cost: CHF %1$s</string>
     <string name="refund_check">Reimbursement to be confirmed</string>
     <string name="refund_none">Reimbursement not indicated</string>
-    <string name="steps_missing">Steps unavailable in the demo data</string>
+    <string name="steps_missing">Steps unavailable</string>
     <string name="wait_title">Wait for service to resume</string>
     <string name="wait_reason">Service is expected to resume at %1$s.</string>
     <string name="taxi_title">Taxi to %1$s</string>
     <string name="taxi_reason">Faster arrival. Reimbursement to be confirmed.</string>
-    <string name="history_missing">Change history unavailable in the demo data.</string>
+    <string name="history_missing">No earlier updates available.</string>
     <string name="information">Information</string>
     <string name="theme_light">Switch to light theme</string>
     <string name="theme_dark">Switch to dark theme</string>
@@ -43,8 +41,7 @@
     <string name="connection">Connection</string>
     <string name="delay">Delay</string>
     <string name="wait_delay">If you wait: +%1$d min</string>
-    <string name="demo_profile">Demo profile</string>
-    <string name="demo_timetable">Demo timetable</string>
+    <string name="demo_timetable">Indicative timetable</string>
     <string name="duration">%1$d min</string>
     <string name="towards">Towards %1$s</string>
     <string name="departure_clock">%1$s · Departure from %2$s</string>
@@ -55,10 +52,10 @@
     <string name="tickets">Tickets</string>
     <string name="shop">Shop</string>
     <string name="swap_stations">Swap departure and arrival</string>
-    <string name="no_reverse_connections">No demo connections in this direction.</string>
+    <string name="no_reverse_connections">No connections available in this direction.</string>
     <string name="ticket_offers">Ticket offers</string>
     <string name="show_ticket_offers">Show ticket offers</string>
-    <string name="demo_offers">Sample fares · purchase unavailable</string>
+    <string name="demo_offers">Indicative fares · purchase unavailable</string>
     <string name="platform">Pl. %1$d</string>
     <string name="first_class">1st class</string>
     <string name="second_class">2nd class</string>
@@ -66,7 +63,7 @@
     <string name="occupancy_low">Low to medium occupancy</string>
     <string name="occupancy_high">High occupancy</string>
     <string name="occupancy_very_high">Very high occupancy</string>
-    <string name="demo_service_details">Demo · platforms and occupancy are illustrative.</string>
+    <string name="demo_service_details">Confirm platforms and occupancy before departure.</string>
     <string name="delay_if_waiting">Estimated delay if you wait</string>
     <string name="updated_at_clock">Updated at %1$s</string>
     <string name="estimated_arrival_clock">Estimated arrival: %1$s</string>
@@ -81,4 +78,11 @@
     <string name="visit_sbb">Visit SBB ↗</string>
     <string name="sbb_timetable_url">https://www.sbb.ch/en/help-and-contact/products-services/timetable.html</string>
     <string name="sbb_passenger_rights_url">https://www.sbb.ch/en/help-and-contact/refunds-compensation/refunds-compensation/compensation-for-delays.html</string>
+    <string name="hotel_option">Hotel</string>
+    <string name="hotel_condition">Hotel assistance may be available if a delay or cancellation makes you miss the last connection of the day and you cannot reach your destination that evening. Confirm eligibility with railway staff.</string>
+    <string name="train_to">%1$s towards %2$s</string>
+    <string name="earliest_train">Earliest estimated arrival by train.</string>
+    <string name="other_travel_options">Other ways to travel</string>
+    <string name="train_fare_included">Included in the train fare.</string>
+    <string name="taxi_separate_cost">Taxi fare (separate): CHF %1$s</string>
 </resources>
