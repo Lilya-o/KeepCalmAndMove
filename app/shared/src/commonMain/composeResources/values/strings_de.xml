@@ -90,4 +90,6 @@
     <string name="de_select_connection">Verbindung auswählen</string>
     <string name="de_station_from">Von</string>
     <string name="de_station_to">Nach</string>
+    <string name="de_your_trip">Ihre Reise</string>
+    <string name="de_trip_tagline">Von der olympischen Hauptstadt zur Stadt am Genfersee — rund 36 Min. bei normalem Betrieb.</string>
 </resources>

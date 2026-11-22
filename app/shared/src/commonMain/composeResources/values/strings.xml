@@ -90,4 +90,6 @@
     <string name="select_connection">Choose a connection</string>
     <string name="station_from">From</string>
     <string name="station_to">To</string>
+    <string name="your_trip">Your trip</string>
+    <string name="trip_tagline">From the Olympic Capital to the city on Lake Geneva — about 36 min when everything runs normally.</string>
 </resources>

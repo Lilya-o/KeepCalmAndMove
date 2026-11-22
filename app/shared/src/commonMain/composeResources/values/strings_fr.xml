@@ -90,4 +90,6 @@
     <string name="fr_select_connection">Choisir une correspondance</string>
     <string name="fr_station_from">Départ</string>
     <string name="fr_station_to">Arrivée</string>
+    <string name="fr_your_trip">Votre voyage</string>
+    <string name="fr_trip_tagline">De la capitale olympique à la cité au bord du Léman — environ 36 min quand tout roule normalement.</string>
 </resources>

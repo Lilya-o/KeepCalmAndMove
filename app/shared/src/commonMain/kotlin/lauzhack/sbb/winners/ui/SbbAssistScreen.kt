@@ -531,6 +531,27 @@ private fun JourneyList(reversed: Boolean, onSwap: () -> Unit, desktop: Boolean,
     val destination = if (reversed) journey.origin else journey.destination
     val ink = MaterialTheme.colorScheme.onSurface
     val border = MaterialTheme.colorScheme.outlineVariant
+    if (!reversed) {
+        // Carte d'intro « Votre voyage » : une touche stylée qui décrit le trajet Lausanne -> Genève.
+        Panel {
+            Text(
+                textResource(Res.string.your_trip).uppercase(),
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary,
+            )
+            Text(
+                textResource(Res.string.route, origin, destination),
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+            )
+            Text(
+                textResource(Res.string.trip_tagline),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
     Panel {
         Row(
             Modifier.fillMaxWidth(),
