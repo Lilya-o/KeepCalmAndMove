@@ -46,6 +46,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.darkColorScheme
@@ -304,7 +305,6 @@ internal fun SbbAssistScreen(desktop: Boolean = false) {
                 if (showInformation) {
                     DelayDialog(
                         ui = ui,
-                        onCursor = viewModel::surCurseur,
                         desktop = desktop,
                         onClose = { showInformation = false },
                         onOptions = {
@@ -313,6 +313,9 @@ internal fun SbbAssistScreen(desktop: Boolean = false) {
                         },
                     )
                 }
+
+                // Outil de démo (hors application) : rejeu de l'incident réel pour le pitch.
+                DemoReplayOverlay(ui = ui, desktop = desktop, onCursor = viewModel::surCurseur)
             }
         }
     }
@@ -859,7 +862,6 @@ private fun TimelineCaption() {
 @Composable
 private fun DelayDialog(
     ui: AssistUiState,
-    onCursor: (Long) -> Unit,
     desktop: Boolean,
     onClose: () -> Unit,
     onOptions: () -> Unit,
@@ -890,7 +892,7 @@ private fun DelayDialog(
                         .padding(if (desktop) 20.dp else 12.dp),
                     verticalArrangement = Arrangement.spacedBy(if (desktop) 12.dp else 8.dp),
                 ) {
-                    DelayInformation(ui, onCursor, onOptions)
+                    DelayInformation(ui, onOptions)
                 }
             }
         }
@@ -999,11 +1001,8 @@ private fun ThemeIcon(showSun: Boolean, ink: Color) {
 }
 
 @Composable
-private fun DelayInformation(ui: AssistUiState, onCursor: (Long) -> Unit, onOptions: () -> Unit) {
+private fun DelayInformation(ui: AssistUiState, onOptions: () -> Unit) {
     val colors = MaterialTheme.colorScheme
-
-    // Curseur de replay : rejoue l'incident minute par minute (moment fort de la démo).
-    ReplaySlider(ui, onCursor)
 
     val reco = ui.reco
     val disruption = ui.disruptionCourante
@@ -1092,27 +1091,99 @@ private fun DelayInformation(ui: AssistUiState, onCursor: (Long) -> Unit, onOpti
     TimelineCaption()
 }
 
+/**
+ * Panneau de DÉMO, volontairement à l'écart de l'application (fond sombre, badge « MODE DÉMO »).
+ * Ce n'est pas une fonctionnalité pour le voyageur : c'est l'outil du pitch pour rejouer l'incident
+ * réel minute par minute et montrer comment la situation (et la reco du moteur) évoluent.
+ * Posé à droite sur Desktop, en bas sur mobile ; il pilote le même ViewModel que l'app.
+ */
 @Composable
-private fun ReplaySlider(ui: AssistUiState, onCursor: (Long) -> Unit) {
+private fun DemoReplayOverlay(ui: AssistUiState, desktop: Boolean, onCursor: (Long) -> Unit) {
     val min = ui.minMillis
     val max = ui.maxMillis
     val cursor = ui.curseurMillis
-    if (min == null || max == null || cursor == null || max <= min) return
-    Panel {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text("Rejouer l'incident", Modifier.weight(1f), style = MaterialTheme.typography.titleMedium)
-            Text(
-                clockFromMillis(cursor),
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.primary,
-                fontWeight = FontWeight.Bold,
-            )
+
+    val panelColor = Color(0xFF1E1E1E)
+    val borderColor = Color(0xFF3A3A3A)
+    val mutedText = Color(0xFFBDBDBD)
+
+    Box(
+        Modifier.fillMaxSize().padding(16.dp),
+        contentAlignment = if (desktop) Alignment.CenterEnd else Alignment.BottomCenter,
+    ) {
+        Surface(
+            modifier = Modifier.widthIn(max = 360.dp)
+                .then(if (desktop) Modifier else Modifier.fillMaxWidth(0.96f)),
+            shape = RoundedCornerShape(14.dp),
+            color = panelColor,
+            contentColor = Color.White,
+            border = BorderStroke(1.dp, borderColor),
+            shadowElevation = 10.dp,
+        ) {
+            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Box(Modifier.size(8.dp).background(HeaderRed, CircleShape))
+                    Text(
+                        "MODE DÉMO",
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = HeaderRed,
+                    )
+                }
+                Text(
+                    "Rejeu de l'incident réel — Renens VD, 17.09.2026. Outil de présentation, pas une fonction de l'app.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = mutedText,
+                )
+                HorizontalDivider(color = borderColor)
+
+                if (min == null || max == null || cursor == null || max <= min) {
+                    Text(
+                        ui.erreur ?: "En attente des données du serveur…",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = if (ui.erreur != null) Color(0xFFFF8A80) else mutedText,
+                    )
+                } else {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Text(
+                            clockFromMillis(cursor),
+                            style = MaterialTheme.typography.headlineSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White,
+                        )
+                        ui.reco?.titre?.let { titre ->
+                            Text(
+                                "→ $titre",
+                                Modifier.weight(1f),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = mutedText,
+                            )
+                        }
+                    }
+                    Slider(
+                        value = cursor.toFloat(),
+                        onValueChange = { onCursor(it.toLong()) },
+                        valueRange = min.toFloat()..max.toFloat(),
+                        colors = SliderDefaults.colors(
+                            thumbColor = HeaderRed,
+                            activeTrackColor = HeaderRed,
+                            inactiveTrackColor = borderColor,
+                        ),
+                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(clockFromMillis(min), style = MaterialTheme.typography.labelSmall, color = mutedText)
+                        Text(
+                            "glissez pour rejouer",
+                            Modifier.weight(1f),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = mutedText,
+                            textAlign = TextAlign.Center,
+                        )
+                        Text(clockFromMillis(max), style = MaterialTheme.typography.labelSmall, color = mutedText)
+                    }
+                }
+            }
         }
-        Slider(
-            value = cursor.toFloat(),
-            onValueChange = { onCursor(it.toLong()) },
-            valueRange = min.toFloat()..max.toFloat(),
-        )
     }
 }
 
