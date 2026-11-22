@@ -360,6 +360,7 @@ internal fun SbbAssistScreen(desktop: Boolean = false) {
                     DelayDialog(
                         ui = ui,
                         desktop = desktop,
+                        onCursor = viewModel::surCurseur,
                         onClose = { showInformation = false },
                         onOptions = {
                             showInformation = false
@@ -954,6 +955,7 @@ private fun TimelineCaption() {
 private fun DelayDialog(
     ui: AssistUiState,
     desktop: Boolean,
+    onCursor: (Long) -> Unit,
     onClose: () -> Unit,
     onOptions: () -> Unit,
 ) {
@@ -983,7 +985,7 @@ private fun DelayDialog(
                         .padding(if (desktop) 20.dp else 12.dp),
                     verticalArrangement = Arrangement.spacedBy(if (desktop) 12.dp else 8.dp),
                 ) {
-                    DelayInformation(ui, onOptions)
+                    DelayInformation(ui, onCursor, onOptions)
                 }
             }
         }
@@ -1091,9 +1093,54 @@ private fun ThemeIcon(showSun: Boolean, ink: Color) {
     }
 }
 
+/** Curseur de rejeu intégré à la fenêtre Information : on le bouge et tout le contenu se met à jour. */
 @Composable
-private fun DelayInformation(ui: AssistUiState, onOptions: () -> Unit) {
+private fun DialogReplaySlider(ui: AssistUiState, onCursor: (Long) -> Unit) {
+    val min = ui.minMillis
+    val max = ui.maxMillis
+    val cursor = ui.curseurMillis
+    if (min == null || max == null || cursor == null || max <= min) return
     val colors = MaterialTheme.colorScheme
+    Panel {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(
+                "Rejeu de l'incident (démo)",
+                Modifier.weight(1f),
+                style = MaterialTheme.typography.labelLarge,
+                color = colors.onSurfaceVariant,
+            )
+            Text(
+                clockFromMillis(cursor),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = colors.primary,
+            )
+        }
+        Slider(
+            value = cursor.toFloat(),
+            onValueChange = { onCursor(it.toLong()) },
+            valueRange = min.toFloat()..max.toFloat(),
+        )
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(clockFromMillis(min), style = MaterialTheme.typography.labelSmall, color = colors.onSurfaceVariant)
+            Text(
+                "glissez pour voir tout évoluer",
+                Modifier.weight(1f),
+                style = MaterialTheme.typography.labelSmall,
+                color = colors.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+            )
+            Text(clockFromMillis(max), style = MaterialTheme.typography.labelSmall, color = colors.onSurfaceVariant)
+        }
+    }
+}
+
+@Composable
+private fun DelayInformation(ui: AssistUiState, onCursor: (Long) -> Unit, onOptions: () -> Unit) {
+    val colors = MaterialTheme.colorScheme
+
+    // Curseur de rejeu (démo) DANS la fenêtre : on le bouge ici et tout se met à jour en direct.
+    DialogReplaySlider(ui, onCursor)
 
     val reco = ui.reco
     val disruption = ui.disruptionCourante
