@@ -1,4 +1,3 @@
-
 package lauzhack.sbb.winners.engine.ia
 
 import lauzhack.sbb.winners.engine.RuleBasedOptionEngine.CategorieCause
@@ -152,4 +151,3 @@ class ExtracteurHybride(
         """.trimIndent()
     }
 }
-

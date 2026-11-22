@@ -1,4 +1,3 @@
-
 package lauzhack.sbb.winners.engine
 
 import lauzhack.sbb.winners.OptionEngine
@@ -55,6 +54,8 @@ class RuleBasedOptionEngine(
         val busDeRemplacementAnnonce: Boolean,
         /** Le conseil principal, en une phrase ou deux. */
         val conseil: String,
+        /** Titre court pour l'écran (« Plus de train ce soir », « Reprise prévue vers 18:30 »…). */
+        val titre: String = "",
     ) {
         val repriseImprobable: Boolean get() = chanceRepriseCeSoir < SEUIL_REPRISE_IMPROBABLE
     }
@@ -110,11 +111,25 @@ class RuleBasedOptionEngine(
             else -> NiveauChance.ELEVEE
         }
 
+        val cause = causeLisible(disruption.cause)
+        val plusDeTrainCeSoir = !faits.resolue && fin != null && fin > finService
         val conseil = buildString {
-            if (faits.resolue) {
+            if (plusDeTrainCeSoir) {
+                append("Il n'y aura plus de train ce soir : la reprise est prévue vers ${heure(fin!!)}, après le dernier train ($cause). ")
+                when (responsabilite) {
+                    Responsabilite.COMPAGNIE ->
+                        append("Tu as droit à un taxi ou à une nuit d'hôtel pris en charge par la compagnie : demande un bon au personnel CFF, ou garde toutes tes quittances. ")
+                    Responsabilite.PAS_LA_COMPAGNIE ->
+                        append("La cause est météorologique ou naturelle : un taxi ou un hôtel resteraient à tes frais. ")
+                    Responsabilite.INCERTAINE ->
+                        append("Demande au personnel CFF un bon pour un taxi ou un hôtel AVANT de payer quoi que ce soit. ")
+                }
+                if (busAnnonce) append("Des bus de remplacement sont annoncés : renseigne-toi sur le quai. ")
+                append("Garde ton billet : avec un tel retard, tu peux demander une indemnité.")
+            } else if (faits.resolue) {
                 append("Le trafic a repris normalement. Quelques retards restent possibles : vérifie ton train dans l'horaire en ligne.")
             } else if (chance < SEUIL_REPRISE_IMPROBABLE) {
-                append("Trafic interrompu (${disruption.cause}). ")
+                append("Trafic interrompu ($cause). ")
                 val bloqueJusquAuMatin = fin == null || fin > finService
                 if (bloqueJusquAuMatin) {
                     append("Il est peu probable qu'un train circule encore avant le matin (chance estimée : ${pct(chance)}). ")
@@ -147,7 +162,16 @@ class RuleBasedOptionEngine(
             }
         }
 
-        return Analyse(categorie, responsabilite, chance, niveau, finService, premierTrain, busAnnonce, conseil)
+        val titre = when {
+            faits.resolue -> "Le trafic a repris"
+            plusDeTrainCeSoir -> "Plus de train ce soir"
+            chance < SEUIL_REPRISE_IMPROBABLE && fin == null -> "Train peu probable ce soir"
+            chance < SEUIL_REPRISE_IMPROBABLE -> "Heure de reprise peu fiable"
+            fin != null -> "Reprise prévue vers ${heure(fin)}"
+            else -> "Durée encore inconnue"
+        }
+
+        return Analyse(categorie, responsabilite, chance, niveau, finService, premierTrain, busAnnonce, conseil, titre)
     }
 
     // =========================================================================
@@ -201,9 +225,9 @@ class RuleBasedOptionEngine(
         //  - PROBABLE : la fin est inconnue mais la chance d'un train avant le matin est faible.
         // Dans les deux cas, on propose l'hôtel (quelle que soit l'heure, même à 2 h du matin).
         val bloqueCertain = finConnue != null && (
-                finConnue > a.finDuServiceMillis ||
-                        jour(arriveeAttente) > jour(journey.plannedArrivalMillis)
-                )
+            finConnue > a.finDuServiceMillis ||
+                jour(arriveeAttente) > jour(journey.plannedArrivalMillis)
+            )
         val nuitProbable = a.repriseImprobable && finConnue == null
         val bloqueProbable = bloqueCertain || nuitProbable
 
@@ -218,7 +242,7 @@ class RuleBasedOptionEngine(
                 effort = EFFORT_NUIT_EN_GARE,
                 reliability = FIABILITE_NUIT_EN_GARE,
                 explanation = "Il est peu probable qu'un train circule encore avant le matin (chance estimée : ${pct(a.chanceRepriseCeSoir)}). " +
-                        "En attendant à la gare, tu partirais au mieux avec le premier train du matin et arriverais vers ${heure(arriveeAttente)}.",
+                    "En attendant à la gare, tu partirais au mieux avec le premier train du matin et arriverais vers ${heure(arriveeAttente)}.",
             )
         } else {
             Option(
@@ -252,7 +276,7 @@ class RuleBasedOptionEngine(
                 effort = EFFORT_BUS,
                 reliability = FIABILITE_BUS,
                 explanation = "Des bus de remplacement sont annoncés. Arrivée estimée vers ${heure(arriveeBus)} " +
-                        "(estimation : le bus est plus lent que le train). Ton billet reste valable.",
+                    "(estimation : le bus est plus lent que le train). Ton billet reste valable.",
             )
         }
 
@@ -263,7 +287,7 @@ class RuleBasedOptionEngine(
             val vitesse = if (km > 20.0) TAXI_VITESSE_AUTOROUTE_KMH else TAXI_VITESSE_VILLE_KMH
             val arriveeTaxi = maintenant + TAXI_ATTENTE_MILLIS + (km / vitesse * HEURE_MILLIS).toLong()
             val taxiPaye = bloqueCertain && a.responsabilite == Responsabilite.COMPAGNIE &&
-                    Rules.TAXI_SI_PAS_ARRIVE_LE_JOUR_MEME
+                Rules.TAXI_SI_PAS_ARRIVE_LE_JOUR_MEME
             options += Option(
                 type = OptionType.TAXI,
                 title = "Prendre un taxi",
@@ -281,7 +305,7 @@ class RuleBasedOptionEngine(
                             append(" Attention : la cause est météorologique ou naturelle, la compagnie ne paie donc pas le taxi.")
                         bloqueProbable ->
                             append(" Avant de payer, demande un bon taxi au personnel CFF : s'il n'y a plus de solution avant le matin, " +
-                                    "la compagnie peut le prendre en charge. Sans bon, c'est à tes frais.")
+                                "la compagnie peut le prendre en charge. Sans bon, c'est à tes frais.")
                     }
                 },
             )
@@ -290,7 +314,7 @@ class RuleBasedOptionEngine(
         // ---- Option HÔTEL (si on est bloqué, au moins probablement, jusqu'au matin) ----
         if (bloqueProbable) {
             val hotelPaye = bloqueCertain && a.responsabilite == Responsabilite.COMPAGNIE &&
-                    Rules.HOTEL_SI_PAS_ARRIVE_LE_JOUR_MEME
+                Rules.HOTEL_SI_PAS_ARRIVE_LE_JOUR_MEME
             val arriveeDemain = maxOf(finConnue ?: 0L, a.premierTrainMillis) + dureeTrajet
             options += Option(
                 type = OptionType.HOTEL,
@@ -305,9 +329,9 @@ class RuleBasedOptionEngine(
                         hotelPaye -> append("Plus de train possible avant le matin : la nuit d'hôtel et le trajet gare-hôtel devraient être pris en charge.")
                         a.responsabilite == Responsabilite.PAS_LA_COMPAGNIE ->
                             append("La cause est météorologique ou naturelle : la compagnie ne paie pas l'hôtel " +
-                                    "(environ ${HOTEL_PRIX_ESTIME_CHF.toInt()} CHF, estimation).")
+                                "(environ ${HOTEL_PRIX_ESTIME_CHF.toInt()} CHF, estimation).")
                         else -> append("Demande un bon d'hôtel au personnel CFF : s'il n'y a plus de solution avant le matin, " +
-                                "la compagnie peut prendre la nuit en charge. Sans bon : environ ${HOTEL_PRIX_ESTIME_CHF.toInt()} CHF (estimation).")
+                            "la compagnie peut prendre la nuit en charge. Sans bon : environ ${HOTEL_PRIX_ESTIME_CHF.toInt()} CHF (estimation).")
                     }
                     append(" Départ avec le premier train, arrivée vers ${heure(arriveeDemain)}.")
                 },
@@ -339,7 +363,7 @@ class RuleBasedOptionEngine(
                     effort = EFFORT_INDEMNITE,
                     reliability = FIABILITE_FIN_INCONNUE,
                     explanation = "Garde ton billet : si tu arrives avec 60 min de retard ou plus, tu peux demander 25 % " +
-                            "du prix du billet (50 % dès 2 h de retard), quelle que soit la cause.",
+                        "du prix du billet (50 % dès 2 h de retard), quelle que soit la cause.",
                 )
             }
         }
@@ -411,6 +435,23 @@ class RuleBasedOptionEngine(
     // =========================================================================
     // Petits outils
     // =========================================================================
+
+    /** Les causes les plus fréquentes des données SBB (en anglais), en français pour l'écran. */
+    internal fun causeLisible(cause: String): String {
+        val c = cause.lowercase()
+        return when {
+            "power failure" in c -> "panne de courant"
+            "overhead line" in c || "contact line" in c || "catenary" in c -> "problème de ligne de contact"
+            "signal" in c -> "dérangement de signalisation"
+            "technical" in c -> "dérangement technique"
+            "person" in c && "accident" in c -> "accident de personne"
+            "accident" in c -> "accident"
+            "fire" in c -> "incendie"
+            "storm" in c || "weather" in c -> "intempéries"
+            "construction" in c || "works" in c -> "travaux"
+            else -> cause.replaceFirstChar { it.lowercase() }
+        }
+    }
 
     /** « Maintenant » = le plus tard entre l'heure de départ prévue et la dernière info reçue. */
     private fun maintenant(d: Disruption, j: Journey): Long = maxOf(j.departureMillis, d.lastUpdateMillis)

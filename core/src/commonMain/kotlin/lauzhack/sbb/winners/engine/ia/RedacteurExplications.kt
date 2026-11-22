@@ -1,4 +1,3 @@
-
 package lauzhack.sbb.winners.engine.ia
 
 /**
@@ -78,9 +77,9 @@ object GardeFou {
     /** Accepté seulement si : pas de chiffre nouveau, pas de promesse d'argent nouvelle, longueur raisonnable. */
     fun accepte(original: String, propose: String): Boolean =
         propose.isNotBlank() &&
-                propose.length <= original.length * 2 + 120 &&
-                chiffresAjoutes(original, propose).isEmpty() &&
-                !promesseAjoutee(original, propose)
+            propose.length <= original.length * 2 + 120 &&
+            chiffresAjoutes(original, propose).isEmpty() &&
+            !promesseAjoutee(original, propose)
 
     /** Les nombres présents dans le texte proposé mais absents de l'original (« 23:03 » → 23 et 03). */
     fun chiffresAjoutes(original: String, propose: String): Set<String> =
@@ -106,5 +105,3 @@ object GardeFou {
         "refund", "reimburs", "free of charge", "for free", "covered", "compensat",
     )
 }
-
-

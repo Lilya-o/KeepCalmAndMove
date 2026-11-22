@@ -1,4 +1,3 @@
-
 package lauzhack.sbb.winners.engine.ia
 
 import lauzhack.sbb.winners.engine.RuleBasedOptionEngine.CategorieCause
@@ -36,7 +35,7 @@ data class FaitsExtraits(
     /** Les règles ont-elles compris l'essentiel ? Si oui, inutile d'appeler l'IA. */
     val suffisant: Boolean
         get() = resolue || categorie != CategorieCause.INCONNUE &&
-                (dureeIndeterminee || repriseHeure != null || dureeMinutes != null)
+            (dureeIndeterminee || repriseHeure != null || dureeMinutes != null)
 }
 
 /**
@@ -60,7 +59,7 @@ object ExtracteurParRegles {
             categorie = categorie,
             responsabilite = responsabiliteConservatrice(Rules.responsabilite(texte), categorie),
             busDeRemplacement = contientUnMot(texte, MOTS_BUS_REMPLACEMENT) ||
-                    EXPRESSIONS_BUS_REMPLACEMENT.any { minuscule.contains(it) },
+                EXPRESSIONS_BUS_REMPLACEMENT.any { minuscule.contains(it) },
             dureeIndeterminee = EXPRESSIONS_DUREE_INDETERMINEE.any { minuscule.contains(it) },
             tendance = when {
                 EXPRESSIONS_AGGRAVATION.any { minuscule.contains(it) } -> Tendance.AGGRAVATION
@@ -128,7 +127,7 @@ object ExtracteurParRegles {
     // Mot déclencheur, puis au plus 40 caractères sans chiffre, puis l'heure. Pas une date (06.09.2026).
     private val REGEX_REPRISE = Regex(
         "(reprise|reprend|rétabli|retabli|wieder|ripres|riprende|resum|jusqu'à|jusqu’à|bis|fino|until)" +
-                "[^0-9]{0,40}(\\d{1,2})\\s*[:h.]\\s*(\\d{2})(?!\\d|\\.\\d)",
+            "[^0-9]{0,40}(\\d{1,2})\\s*[:h.]\\s*(\\d{2})(?!\\d|\\.\\d)",
     )
 
     // --- Mots-clés (FR, DE, IT, EN) ---

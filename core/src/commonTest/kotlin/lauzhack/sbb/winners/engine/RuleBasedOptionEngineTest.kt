@@ -1,4 +1,3 @@
-
 package lauzhack.sbb.winners.engine
 
 import lauzhack.sbb.winners.model.Disruption
@@ -224,7 +223,7 @@ class RuleBasedOptionEngineTest {
                 timestampMillis = depart,
                 source = MessageSource.PUBLIC_TICKER,
                 text = "Genève - Lausanne : trafic interrompu. Durée indéterminée." +
-                        if (avecBus) " Des bus de remplacement (EV) circulent." else "",
+                    if (avecBus) " Des bus de remplacement (EV) circulent." else "",
             ),
         ),
     )
@@ -303,6 +302,20 @@ class RuleBasedOptionEngineTest {
         assertTrue(hotel != null, "l'hôtel doit être proposé quand on est bloqué jusqu'au matin")
         // Panne technique = faute de la compagnie, dernière correspondance perdue → hôtel et taxi payés
         assertTrue(hotel.reimbursable)
+        assertTrue(options.first { it.type == OptionType.TAXI }.reimbursable)
+    }
+    @Test
+    fun repriseApresLeDernierTrain_messageClair_hotelEtTaxiPrisEnCharge() {
+        // 23:15, panne technique, reprise annoncée à 02:00 : plus aucun train ce soir
+        val vingtTroisQuinze = depart + 75 * min
+        val trajetSoir = Journey("Lausanne", "Genève", vingtTroisQuinze, vingtTroisQuinze + 36 * min)
+        val panne = perturbation(finEstimee = depart + 4 * heure).copy(lastUpdateMillis = vingtTroisQuinze)
+        val analyse = engine.analyser(panne, trajetSoir)
+        assertEquals("Plus de train ce soir", analyse.titre)
+        assertTrue(analyse.conseil.contains("Il n'y aura plus de train ce soir"))
+        assertTrue(analyse.conseil.contains("pris en charge"))
+        val options = engine.generateOptions(panne, trajetSoir)
+        assertTrue(options.first { it.type == OptionType.HOTEL }.reimbursable)
         assertTrue(options.first { it.type == OptionType.TAXI }.reimbursable)
     }
 }

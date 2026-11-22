@@ -1,4 +1,3 @@
-
 package lauzhack.sbb.winners.engine.ia
 
 import lauzhack.sbb.winners.engine.RuleBasedOptionEngine
@@ -209,6 +208,11 @@ class IaTest {
         val reco = lancer { ConseillerVoyage().conseiller(d, trajet, equilibre) }
         assertTrue(reco.conseil.contains("18:45"))
     }
+    @Test
+    fun sansProfil_lInterfaceObtientQuandMemeUneRecommandation() {
+        val d = perturbation("Dérangement technique", MessageSource.PUBLIC_TICKER to "Reprise prévue vers 18:45.")
+        val reco = lancer { ConseillerVoyage().conseiller(d, trajet) } // pas de profil
+        assertTrue(reco.recommandee != null)
+        assertTrue(reco.conseil.isNotBlank())
+    }
 }
-
-

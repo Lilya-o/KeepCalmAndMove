@@ -1,4 +1,3 @@
-
 package lauzhack.sbb.winners.engine.ia
 
 import lauzhack.sbb.winners.engine.RuleBasedOptionEngine
@@ -9,6 +8,7 @@ import lauzhack.sbb.winners.engine.RuleBasedOptionEngine.Companion.MINUTE_MILLIS
 import lauzhack.sbb.winners.model.Disruption
 import lauzhack.sbb.winners.model.Journey
 import lauzhack.sbb.winners.model.Option
+import lauzhack.sbb.winners.model.OptionType
 import lauzhack.sbb.winners.model.Profile
 
 /** Tout ce que l'écran doit afficher. */
@@ -22,7 +22,27 @@ data class Recommandation(
     /** Vrai si l'IA a complété les faits ou reformulé au moins un texte (sinon : règles seules). */
     val iaUtilisee: Boolean,
 ) {
+    /** L'option recommandée (la n°1). */
     val recommandee: Option? get() = options.firstOrNull()
+
+    /** Titre court pour l'écran (« Plus de train ce soir », « Reprise prévue vers 18:30 »…). */
+    val titre: String get() = analyse.titre
+
+    /** Chance qu'un train circule encore ce soir, en % (estimation du moteur). */
+    val chanceTrainCeSoirPourcent: Int get() = (analyse.chanceRepriseCeSoir * 100).toInt()
+
+    /** Les autres choix, sous la recommandation (l'indemnité est à part : ce n'est pas un moyen de rentrer). */
+    val alternatives: List<Option>
+        get() = options.drop(1).filter { it.type != OptionType.REFUND }
+
+    /** L'indemnité de retard, si elle s'applique : à afficher comme une information. */
+    val indemnite: Option?
+        get() = options.firstOrNull { it.type == OptionType.REFUND }
+
+    /** Retard si l'on attend, en minutes (« Si vous attendez : +85 min »), ou null si on ne sait pas. */
+    fun retardSiAttenteMinutes(journey: Journey): Long? =
+        options.firstOrNull { it.type == OptionType.WAIT }?.etaMillis
+            ?.let { (it - journey.plannedArrivalMillis) / MINUTE_MILLIS }
 }
 
 /**
@@ -49,10 +69,13 @@ class ConseillerVoyage(
     private val extracteur = ExtracteurHybride(modele, stats)
     private val redacteur = RedacteurExplications(modele, stats)
 
+    /**
+     * @param profile facultatif : l'interface n'a pas de choix de profil, on utilise alors [PROFIL_PAR_DEFAUT].
+     */
     suspend fun conseiller(
         disruption: Disruption,
         journey: Journey,
-        profile: Profile,
+        profile: Profile = PROFIL_PAR_DEFAUT,
         langue: Langue = Langue.FR,
     ): Recommandation {
         // 1. Comprendre les messages
@@ -109,9 +132,14 @@ class ConseillerVoyage(
     }
 
     companion object {
+        /**
+         * Profil utilisé quand l'interface ne demande rien au voyageur : temps, argent et effort comptent autant.
+         * Sur l'incident réel de Renens (17.09.2026), il conseille d'attendre tant que l'heure de reprise tient,
+         * puis le bus de remplacement dès que l'heure a été repoussée deux fois.
+         */
+        val PROFIL_PAR_DEFAUT = Profile(urgency = 0.5, budgetSensitivity = 0.5, flexibility = 0.5)
+
         /** Une heure lue dans un message reste une annonce, pas une certitude. */
         const val CONFIANCE_FIN_LUE_DANS_UN_MESSAGE = 0.6
     }
 }
-
-

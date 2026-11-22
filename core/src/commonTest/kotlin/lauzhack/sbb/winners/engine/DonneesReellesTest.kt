@@ -1,4 +1,3 @@
-
 package lauzhack.sbb.winners.engine
 
 import lauzhack.sbb.winners.engine.RuleBasedOptionEngine.CategorieCause

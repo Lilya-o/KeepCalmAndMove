@@ -1,4 +1,3 @@
-
 package lauzhack.sbb.winners.engine
 
 /**
@@ -93,7 +92,7 @@ object Rules {
     fun responsabilite(texte: String): Responsabilite = when {
         causeHorsResponsabilite(texte) -> Responsabilite.PAS_LA_COMPAGNIE
         contientUnMot(texte, MOTS_RESPONSABILITE_INCERTAINE) ||
-                EXPRESSIONS_RESPONSABILITE_INCERTAINE.any { texte.lowercase().contains(it) } ->
+            EXPRESSIONS_RESPONSABILITE_INCERTAINE.any { texte.lowercase().contains(it) } ->
             Responsabilite.INCERTAINE
         else -> Responsabilite.COMPAGNIE
     }

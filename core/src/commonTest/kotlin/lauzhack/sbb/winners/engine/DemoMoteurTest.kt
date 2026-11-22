@@ -1,4 +1,3 @@
-
 package lauzhack.sbb.winners.engine
 
 import lauzhack.sbb.winners.model.Disruption
@@ -50,7 +49,7 @@ class DemoMoteurTest {
                     timestampMillis = depart,
                     source = MessageSource.PUBLIC_TICKER,
                     text = "Genève - Lausanne : trafic interrompu. Durée indéterminée." +
-                            if (busAnnonce) " Des bus de remplacement (EV) circulent." else "",
+                        if (busAnnonce) " Des bus de remplacement (EV) circulent." else "",
                 ),
             ),
         )
@@ -96,4 +95,3 @@ class DemoMoteurTest {
         println()
     }
 }
-

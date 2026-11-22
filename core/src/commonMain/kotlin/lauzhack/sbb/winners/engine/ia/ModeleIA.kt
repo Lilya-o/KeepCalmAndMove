@@ -1,4 +1,3 @@
-
 package lauzhack.sbb.winners.engine.ia
 
 /**
@@ -34,7 +33,7 @@ class StatistiquesIA {
 
     override fun toString(): String =
         "appels IA : $appelsIA · cache : $reponsesDuCache · évités par les règles : $evitesGraceAuxRegles · " +
-                "rejetés par les garde-fous : $reponsesRejetees · échecs : $echecsIA"
+            "rejetés par les garde-fous : $reponsesRejetees · échecs : $echecsIA"
 }
 
 /** Petit cache « les N dernières réponses » (évite de rappeler l'IA pendant le replay). */
@@ -49,5 +48,3 @@ internal class CacheLimite<K, V>(private val tailleMax: Int) {
         while (map.size > tailleMax) map.remove(map.keys.first())
     }
 }
-
-

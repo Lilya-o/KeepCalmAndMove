@@ -1,4 +1,3 @@
-
 package lauzhack.sbb.winners.engine
 
 /**
@@ -46,4 +45,3 @@ object Distances {
         }
     }
 }
-
