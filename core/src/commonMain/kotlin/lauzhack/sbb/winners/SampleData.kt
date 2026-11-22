@@ -10,18 +10,19 @@ object SampleData {
         id = "demo-1",
         cause = "Difficultés techniques sur l'infrastructure",
         affectedLines = listOf("RE33", "RL1", "RL3", "RL4", "TERL2"),
-        affectedStations = listOf("Annemasse", "Genève"),
+        affectedStations = listOf("Lausanne", "Genève"),
         startTimeMillis = min(0),
         estimatedEndMillis = min(80),
         severity = Severity.MAJOR,
         confidence = 0.6,
         lastUpdateMillis = min(15),
         messages = listOf(
-            DisruptionMessage(min(0), MessageSource.PUBLIC_TICKER, "Trafic limité entre Annemasse et Genève."),
+            DisruptionMessage(min(0), MessageSource.PUBLIC_TICKER, "Trafic limité entre Lausanne et Genève."),
         ),
     )
 
-    val journey = Journey("Annemasse", "Genève", min(10), min(35))
+    // Trajet de démo : Lausanne -> Genève, ~36 min (durée réelle d'un direct sur cette ligne).
+    val journey = Journey("Lausanne", "Genève", min(10), min(46))
     val profile = Profile(urgency = 0.8, budgetSensitivity = 0.3, flexibility = 0.2)
 
     val options = listOf(

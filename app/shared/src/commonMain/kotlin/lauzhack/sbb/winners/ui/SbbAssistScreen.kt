@@ -1181,6 +1181,48 @@ private fun DemoReplayOverlay(ui: AssistUiState, desktop: Boolean, onCursor: (Lo
                         )
                         Text(clockFromMillis(max), style = MaterialTheme.typography.labelSmall, color = mutedText)
                     }
+
+                    // Impact en direct : retard + options, recalculés par le moteur à chaque position.
+                    ui.reco?.let { reco ->
+                        HorizontalDivider(color = borderColor)
+                        ui.journey?.let { journey ->
+                            reco.retardSiAttenteMinutes(journey)?.let { retard ->
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(
+                                        "Si vous attendez",
+                                        Modifier.weight(1f),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = mutedText,
+                                    )
+                                    Text(
+                                        "+$retard min",
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        color = HeaderRed,
+                                    )
+                                }
+                            }
+                        }
+                        Text(
+                            "Chance qu'un train passe ce soir : ${reco.chanceTrainCeSoirPourcent} %",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = mutedText,
+                        )
+                        reco.recommandee?.let { option ->
+                            Text(
+                                "✓  ${option.title}",
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.SemiBold,
+                                color = Color.White,
+                            )
+                        }
+                        reco.alternatives.forEach { option ->
+                            Text("•  ${option.title}", style = MaterialTheme.typography.bodySmall, color = mutedText)
+                        }
+                        reco.indemnite?.let { option ->
+                            Text("💶  ${option.title}", style = MaterialTheme.typography.bodySmall, color = mutedText)
+                        }
+                    }
                 }
             }
         }
