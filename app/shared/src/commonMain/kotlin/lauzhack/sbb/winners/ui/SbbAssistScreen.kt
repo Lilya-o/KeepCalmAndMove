@@ -362,21 +362,26 @@ internal fun SbbAssistScreen(desktop: Boolean = false) {
                         ui = ui,
                         desktop = desktop,
                         onCursor = viewModel::surCurseur,
+                        onSelectTrajet = viewModel::charger,
                         onClose = { showInformation = false },
                         onOptions = {
                             showInformation = false
                             screen = Screen.OPTIONS
                         },
                     )
+                } else {
+                    Box(
+                        Modifier.fillMaxSize().padding(16.dp),
+                        contentAlignment = if (desktop) Alignment.CenterEnd else Alignment.BottomCenter,
+                    ) {
+                        DemoReplayPanel(
+                            ui = ui,
+                            onCursor = viewModel::surCurseur,
+                            onSelectTrajet = viewModel::charger,
+                            modifier = Modifier.widthIn(max = 360.dp).fillMaxWidth(if (desktop) 1f else .96f),
+                        )
+                    }
                 }
-
-                // Outil de démo (hors application) : rejeu de l'incident réel pour le pitch.
-                DemoReplayOverlay(
-                    ui = ui,
-                    desktop = desktop,
-                    onCursor = viewModel::surCurseur,
-                    onSelectTrajet = viewModel::charger,
-                )
 
                 // Notification « urgente » quand la recommandation change.
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
@@ -959,37 +964,69 @@ private fun DelayDialog(
     ui: AssistUiState,
     desktop: Boolean,
     onCursor: (Long) -> Unit,
+    onSelectTrajet: (TrajetDemo) -> Unit,
     onClose: () -> Unit,
     onOptions: () -> Unit,
 ) {
     Dialog(onDismissRequest = onClose, properties = DialogProperties(usePlatformDefaultWidth = false)) {
-        Surface(
-            Modifier.widthIn(max = if (desktop) 700.dp else 400.dp)
-                .fillMaxWidth(if (desktop) .90f else .96f)
+        BoxWithConstraints(
+            Modifier.widthIn(max = if (desktop) 1080.dp else 420.dp)
+                .fillMaxWidth(.96f)
                 .fillMaxHeight(.92f),
-            shape = RoundedCornerShape(18.dp),
-            color = MaterialTheme.colorScheme.background,
         ) {
-            Column {
-                Surface(color = HeaderRed, contentColor = Color.White) {
-                    Row(
-                        Modifier.fillMaxWidth().padding(start = 16.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Text(textResource(Res.string.information), Modifier.weight(1f), style = MaterialTheme.typography.titleMedium)
-                        val closeLabel = textResource(Res.string.close)
-                        IconButton(onClick = onClose, modifier = Modifier.semantics { contentDescription = closeLabel }) {
-                            Text("×", style = MaterialTheme.typography.headlineSmall)
-                        }
+            if (desktop && maxWidth >= 760.dp) {
+                val replayHeight = maxHeight
+                Row(
+                    Modifier.fillMaxSize(),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    DelayDialogCard(ui, desktop, onClose, onOptions, Modifier.weight(1f).fillMaxHeight())
+                    Box(Modifier.width(350.dp).heightIn(max = replayHeight).verticalScroll(rememberScrollState())) {
+                        DemoReplayPanel(ui, onCursor, onSelectTrajet, Modifier.fillMaxWidth())
                     }
                 }
-                Column(
-                    Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState())
-                        .padding(if (desktop) 20.dp else 12.dp),
-                    verticalArrangement = Arrangement.spacedBy(if (desktop) 12.dp else 8.dp),
-                ) {
-                    DelayInformation(ui, onCursor, onOptions)
+            } else {
+                val replayHeight = maxHeight * .40f
+                Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    DelayDialogCard(ui, desktop, onClose, onOptions, Modifier.weight(1f).fillMaxWidth())
+                    Box(Modifier.fillMaxWidth().heightIn(max = replayHeight).verticalScroll(rememberScrollState())) {
+                        DemoReplayPanel(ui, onCursor, onSelectTrajet, Modifier.fillMaxWidth())
+                    }
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun DelayDialogCard(
+    ui: AssistUiState,
+    desktop: Boolean,
+    onClose: () -> Unit,
+    onOptions: () -> Unit,
+    modifier: Modifier,
+) {
+    Surface(modifier, shape = RoundedCornerShape(18.dp), color = MaterialTheme.colorScheme.background) {
+        Column {
+            Surface(color = HeaderRed, contentColor = Color.White) {
+                Row(
+                    Modifier.fillMaxWidth().padding(start = 16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(textResource(Res.string.information), Modifier.weight(1f), style = MaterialTheme.typography.titleMedium)
+                    val closeLabel = textResource(Res.string.close)
+                    IconButton(onClick = onClose, modifier = Modifier.semantics { contentDescription = closeLabel }) {
+                        Text("×", style = MaterialTheme.typography.headlineSmall)
+                    }
+                }
+            }
+            Column(
+                Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState())
+                    .padding(if (desktop) 20.dp else 12.dp),
+                verticalArrangement = Arrangement.spacedBy(if (desktop) 12.dp else 8.dp),
+            ) {
+                DelayInformation(ui, onOptions)
             }
         }
     }
@@ -1096,54 +1133,9 @@ private fun ThemeIcon(showSun: Boolean, ink: Color) {
     }
 }
 
-/** Curseur de rejeu intégré à la fenêtre Information : on le bouge et tout le contenu se met à jour. */
 @Composable
-private fun DialogReplaySlider(ui: AssistUiState, onCursor: (Long) -> Unit) {
-    val min = ui.minMillis
-    val max = ui.maxMillis
-    val cursor = ui.curseurMillis
-    if (min == null || max == null || cursor == null || max <= min) return
+private fun DelayInformation(ui: AssistUiState, onOptions: () -> Unit) {
     val colors = MaterialTheme.colorScheme
-    Panel {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(
-                "Rejeu de l'incident (démo)",
-                Modifier.weight(1f),
-                style = MaterialTheme.typography.labelLarge,
-                color = colors.onSurfaceVariant,
-            )
-            Text(
-                clockFromMillis(cursor),
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                color = colors.primary,
-            )
-        }
-        Slider(
-            value = cursor.toFloat(),
-            onValueChange = { onCursor(it.toLong()) },
-            valueRange = min.toFloat()..max.toFloat(),
-        )
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(clockFromMillis(min), style = MaterialTheme.typography.labelSmall, color = colors.onSurfaceVariant)
-            Text(
-                "glissez pour voir tout évoluer",
-                Modifier.weight(1f),
-                style = MaterialTheme.typography.labelSmall,
-                color = colors.onSurfaceVariant,
-                textAlign = TextAlign.Center,
-            )
-            Text(clockFromMillis(max), style = MaterialTheme.typography.labelSmall, color = colors.onSurfaceVariant)
-        }
-    }
-}
-
-@Composable
-private fun DelayInformation(ui: AssistUiState, onCursor: (Long) -> Unit, onOptions: () -> Unit) {
-    val colors = MaterialTheme.colorScheme
-
-    // Curseur de rejeu (démo) DANS la fenêtre : on le bouge ici et tout se met à jour en direct.
-    DialogReplaySlider(ui, onCursor)
 
     val reco = ui.reco
     val disruption = ui.disruptionCourante
@@ -1279,11 +1271,11 @@ private fun LocalizedTravelAdvice(ui: AssistUiState): String {
  * Posé à droite sur Desktop, en bas sur mobile ; il pilote le même ViewModel que l'app.
  */
 @Composable
-private fun DemoReplayOverlay(
+private fun DemoReplayPanel(
     ui: AssistUiState,
-    desktop: Boolean,
     onCursor: (Long) -> Unit,
     onSelectTrajet: (TrajetDemo) -> Unit,
+    modifier: Modifier,
 ) {
     val min = ui.minMillis
     val max = ui.maxMillis
@@ -1293,142 +1285,136 @@ private fun DemoReplayOverlay(
     val borderColor = Color(0xFF3A3A3A)
     val mutedText = Color(0xFFBDBDBD)
 
-    Box(
-        Modifier.fillMaxSize().padding(16.dp),
-        contentAlignment = if (desktop) Alignment.CenterEnd else Alignment.BottomCenter,
+    Surface(
+        modifier = modifier,
+        shape = RoundedCornerShape(14.dp),
+        color = panelColor,
+        contentColor = Color.White,
+        border = BorderStroke(1.dp, borderColor),
+        shadowElevation = 10.dp,
     ) {
-        Surface(
-            modifier = Modifier.widthIn(max = 360.dp)
-                .then(if (desktop) Modifier else Modifier.fillMaxWidth(0.96f)),
-            shape = RoundedCornerShape(14.dp),
-            color = panelColor,
-            contentColor = Color.White,
-            border = BorderStroke(1.dp, borderColor),
-            shadowElevation = 10.dp,
-        ) {
-            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Box(Modifier.size(8.dp).background(HeaderRed, CircleShape))
-                    Text(
-                        "MODE DÉMO",
-                        style = MaterialTheme.typography.labelLarge,
-                        fontWeight = FontWeight.Bold,
-                        color = HeaderRed,
-                    )
-                }
-                // Pastilles : basculer entre les trajets (chacun = un incident RÉEL des données).
-                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    AssistViewModel.TRAJETS.forEach { trajet ->
-                        val selected = trajet.incidentId == ui.trajet.incidentId
-                        Surface(
-                            onClick = { if (!selected) onSelectTrajet(trajet) },
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(8.dp),
-                            color = if (selected) HeaderRed else Color.Transparent,
-                            contentColor = Color.White,
-                            border = if (selected) null else BorderStroke(1.dp, borderColor),
-                        ) {
-                            Text(
-                                trajet.label,
-                                Modifier.padding(horizontal = 12.dp, vertical = 7.dp),
-                                style = MaterialTheme.typography.labelMedium,
-                                fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
-                            )
-                        }
-                    }
-                }
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Box(Modifier.size(8.dp).background(HeaderRed, CircleShape))
                 Text(
-                    "Rejeu d'un incident réel (données SBB). Outil de présentation, pas une fonction de l'app.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = mutedText,
+                    "MODE DÉMO",
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = HeaderRed,
                 )
-                HorizontalDivider(color = borderColor)
+            }
+            // Pastilles : basculer entre les trajets (chacun = un incident RÉEL des données).
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                AssistViewModel.TRAJETS.forEach { trajet ->
+                    val selected = trajet.incidentId == ui.trajet.incidentId
+                    Surface(
+                        onClick = { if (!selected) onSelectTrajet(trajet) },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(8.dp),
+                        color = if (selected) HeaderRed else Color.Transparent,
+                        contentColor = Color.White,
+                        border = if (selected) null else BorderStroke(1.dp, borderColor),
+                    ) {
+                        Text(
+                            trajet.label,
+                            Modifier.padding(horizontal = 12.dp, vertical = 7.dp),
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
+                        )
+                    }
+                }
+            }
+            Text(
+                "Rejeu d'un incident réel (données SBB). Outil de présentation, pas une fonction de l'app.",
+                style = MaterialTheme.typography.bodySmall,
+                color = mutedText,
+            )
+            HorizontalDivider(color = borderColor)
 
-                if (min == null || max == null || cursor == null || max <= min) {
+            if (min == null || max == null || cursor == null || max <= min) {
+                Text(
+                    ui.erreur ?: "En attente des données du serveur…",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = if (ui.erreur != null) Color(0xFFFF8A80) else mutedText,
+                )
+            } else {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     Text(
-                        ui.erreur ?: "En attente des données du serveur…",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = if (ui.erreur != null) Color(0xFFFF8A80) else mutedText,
+                        clockFromMillis(cursor),
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White,
                     )
-                } else {
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    ui.reco?.titre?.let { titre ->
                         Text(
-                            clockFromMillis(cursor),
-                            style = MaterialTheme.typography.headlineSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White,
-                        )
-                        ui.reco?.titre?.let { titre ->
-                            Text(
-                                "→ $titre",
-                                Modifier.weight(1f),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = mutedText,
-                            )
-                        }
-                    }
-                    Slider(
-                        value = cursor.toFloat(),
-                        onValueChange = { onCursor(it.toLong()) },
-                        valueRange = min.toFloat()..max.toFloat(),
-                        colors = SliderDefaults.colors(
-                            thumbColor = HeaderRed,
-                            activeTrackColor = HeaderRed,
-                            inactiveTrackColor = borderColor,
-                        ),
-                    )
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(clockFromMillis(min), style = MaterialTheme.typography.labelSmall, color = mutedText)
-                        Text(
-                            "glissez pour rejouer",
+                            "→ $titre",
                             Modifier.weight(1f),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = mutedText,
-                            textAlign = TextAlign.Center,
-                        )
-                        Text(clockFromMillis(max), style = MaterialTheme.typography.labelSmall, color = mutedText)
-                    }
-
-                    // Impact en direct : retard + options, recalculés par le moteur à chaque position.
-                    ui.reco?.let { reco ->
-                        HorizontalDivider(color = borderColor)
-                        ui.journey?.let { journey ->
-                            reco.retardSiAttenteMinutes(journey)?.let { retard ->
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Text(
-                                        "Si vous attendez",
-                                        Modifier.weight(1f),
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = mutedText,
-                                    )
-                                    Text(
-                                        "+$retard min",
-                                        style = MaterialTheme.typography.titleMedium,
-                                        fontWeight = FontWeight.Bold,
-                                        color = HeaderRed,
-                                    )
-                                }
-                            }
-                        }
-                        Text(
-                            "Chance qu'un train passe ce soir : ${reco.chanceTrainCeSoirPourcent} %",
                             style = MaterialTheme.typography.bodySmall,
                             color = mutedText,
                         )
-                        reco.recommandee?.let { option ->
-                            Text(
-                                "✓  ${option.title}",
-                                style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.SemiBold,
-                                color = Color.White,
-                            )
+                    }
+                }
+                Slider(
+                    value = cursor.toFloat(),
+                    onValueChange = { onCursor(it.toLong()) },
+                    valueRange = min.toFloat()..max.toFloat(),
+                    colors = SliderDefaults.colors(
+                        thumbColor = HeaderRed,
+                        activeTrackColor = HeaderRed,
+                        inactiveTrackColor = borderColor,
+                    ),
+                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(clockFromMillis(min), style = MaterialTheme.typography.labelSmall, color = mutedText)
+                    Text(
+                        "glissez pour rejouer",
+                        Modifier.weight(1f),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = mutedText,
+                        textAlign = TextAlign.Center,
+                    )
+                    Text(clockFromMillis(max), style = MaterialTheme.typography.labelSmall, color = mutedText)
+                }
+
+                // Impact en direct : retard + options, recalculés par le moteur à chaque position.
+                ui.reco?.let { reco ->
+                    HorizontalDivider(color = borderColor)
+                    ui.journey?.let { journey ->
+                        reco.retardSiAttenteMinutes(journey)?.let { retard ->
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(
+                                    "Si vous attendez",
+                                    Modifier.weight(1f),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = mutedText,
+                                )
+                                Text(
+                                    "+$retard min",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = HeaderRed,
+                                )
+                            }
                         }
-                        reco.alternatives.forEach { option ->
-                            Text("•  ${option.title}", style = MaterialTheme.typography.bodySmall, color = mutedText)
-                        }
-                        reco.indemnite?.let { option ->
-                            Text("💶  ${option.title}", style = MaterialTheme.typography.bodySmall, color = mutedText)
-                        }
+                    }
+                    Text(
+                        "Chance qu'un train passe ce soir : ${reco.chanceTrainCeSoirPourcent} %",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = mutedText,
+                    )
+                    reco.recommandee?.let { option ->
+                        Text(
+                            "✓  ${option.title}",
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            color = Color.White,
+                        )
+                    }
+                    reco.alternatives.forEach { option ->
+                        Text("•  ${option.title}", style = MaterialTheme.typography.bodySmall, color = mutedText)
+                    }
+                    reco.indemnite?.let { option ->
+                        Text("💶  ${option.title}", style = MaterialTheme.typography.bodySmall, color = mutedText)
                     }
                 }
             }
